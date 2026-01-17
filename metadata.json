@@ -1,0 +1,7 @@
+{
+  "name": "Odipo C. Odero - Author Portal",
+  "description": "A minimalist, black-and-white literary portal and content management system for author Odipo C. Odero, featuring book listings, blog, and admin dashboard.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
