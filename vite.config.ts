@@ -7,8 +7,9 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
+    const isGitHubPages = process.env.GITHUB_PAGES === 'true';
     return {
-      base: '/Odero-C-Odipo-Website/',
+      base: isGitHubPages ? '/Odero-C-Odipo-Website/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',
