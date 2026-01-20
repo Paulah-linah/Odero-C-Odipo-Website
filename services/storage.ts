@@ -1,5 +1,6 @@
 
-import { Book, BlogPost, Event, Order } from '../types';
+import { Book, BlogPost, Order } from '../types';
+import type { Event as EventType } from '../types';
 import { INITIAL_BOOKS, INITIAL_POSTS, INITIAL_EVENTS } from '../constants';
 
 const KEYS = {
@@ -19,7 +20,10 @@ export const storage = {
     }
     return JSON.parse(data);
   },
-  saveBooks: (books: Book[]) => localStorage.setItem(KEYS.BOOKS, JSON.stringify(books)),
+  saveBooks: (books: Book[]) => {
+    localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
+    window.dispatchEvent(new Event('odero_books_updated'));
+  },
   
   getBlogs: (): BlogPost[] => {
     const data = localStorage.getItem(KEYS.BLOGS);
@@ -31,7 +35,7 @@ export const storage = {
   },
   saveBlogs: (blogs: BlogPost[]) => localStorage.setItem(KEYS.BLOGS, JSON.stringify(blogs)),
 
-  getEvents: (): Event[] => {
+  getEvents: (): EventType[] => {
     const data = localStorage.getItem(KEYS.EVENTS);
     if (!data) {
       localStorage.setItem(KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
@@ -39,7 +43,7 @@ export const storage = {
     }
     return JSON.parse(data);
   },
-  saveEvents: (events: Event[]) => localStorage.setItem(KEYS.EVENTS, JSON.stringify(events)),
+  saveEvents: (events: EventType[]) => localStorage.setItem(KEYS.EVENTS, JSON.stringify(events)),
 
   getOrders: (): Order[] => {
     const data = localStorage.getItem(KEYS.ORDERS);

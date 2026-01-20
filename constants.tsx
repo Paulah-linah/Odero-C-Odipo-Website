@@ -7,7 +7,7 @@ export const INITIAL_BOOKS: Book[] = [
     title: 'Mum & Baba',
     slug: 'mum-and-baba',
     synopsis: 'A reflective memoir exploring the intricate tapestry of family, identity, and the quiet moments that define our lineage. Through sparse prose and intimate storytelling, Odero navigates the echoes of the past.',
-    price: 1500,
+    price: 1200,
     status: BookStatus.AVAILABLE,
     coverImage: 'https://picsum.photos/seed/book1/400/600',
     publishedDate: '2023-10-15',

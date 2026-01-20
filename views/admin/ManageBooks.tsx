@@ -8,7 +8,10 @@ export const ManageBooks: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    setBooks(storage.getBooks());
+    const refresh = () => setBooks(storage.getBooks());
+    refresh();
+    window.addEventListener('odero_books_updated', refresh);
+    return () => window.removeEventListener('odero_books_updated', refresh);
   }, []);
 
   const handleDelete = (id: string) => {
@@ -55,7 +58,7 @@ export const ManageBooks: React.FC = () => {
                 <tr key={book.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <img src={book.coverImage} className="w-10 h-14 object-cover grayscale flex-shrink-0" alt="" />
+                      <img src={book.coverImage} className="w-10 h-14 object-cover flex-shrink-0" alt="" />
                       <div>
                         <p className="font-serif font-bold text-sm">{book.title}</p>
                         {book.isFeatured && <span className="text-[9px] bg-black text-white px-2 py-0.5 uppercase tracking-tighter">Featured</span>}

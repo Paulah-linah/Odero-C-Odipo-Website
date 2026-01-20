@@ -8,9 +8,15 @@ export const Home: React.FC = () => {
   const [featuredBook, setFeaturedBook] = useState<Book | null>(null);
 
   useEffect(() => {
-    const books = storage.getBooks();
-    const featured = books.find(b => b.isFeatured) || books[0];
-    setFeaturedBook(featured);
+    const refresh = () => {
+      const books = storage.getBooks();
+      const featured = books.find(b => b.isFeatured) || books[0];
+      setFeaturedBook(featured);
+    };
+
+    refresh();
+    window.addEventListener('odero_books_updated', refresh);
+    return () => window.removeEventListener('odero_books_updated', refresh);
   }, []);
 
   return (
@@ -53,7 +59,7 @@ export const Home: React.FC = () => {
                <img 
                 src={featuredBook.coverImage} 
                 alt={featuredBook.title} 
-                className="w-full max-w-xs shadow-2xl border-4 border-white"
+                className="w-full max-w-xs shadow-2xl border-4 border-white object-cover"
                />
             </div>
             <div className="w-full md:w-2/3">

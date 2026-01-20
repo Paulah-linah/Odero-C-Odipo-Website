@@ -8,7 +8,10 @@ export const Books: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    setBooks(storage.getBooks());
+    const refresh = () => setBooks(storage.getBooks());
+    refresh();
+    window.addEventListener('odero_books_updated', refresh);
+    return () => window.removeEventListener('odero_books_updated', refresh);
   }, []);
 
   return (
@@ -26,7 +29,7 @@ export const Books: React.FC = () => {
                 <img 
                   src={book.coverImage} 
                   alt={book.title} 
-                  className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                 />
                 <div className="absolute top-4 right-4 bg-white px-3 py-1 text-[10px] uppercase font-bold tracking-widest border border-black">
                   {book.status}

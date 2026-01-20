@@ -14,6 +14,7 @@ import { AdminLogin } from './views/admin/AdminLogin';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { Dashboard } from './views/admin/Dashboard';
 import { ManageBooks } from './views/admin/ManageBooks';
+import { EditBook } from './views/admin/EditBook';
 
 const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <>
@@ -40,6 +41,7 @@ const App: React.FC = () => {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
         <Route path="/admin/books" element={<AdminLayout><ManageBooks /></AdminLayout>} />
+        <Route path="/admin/books/edit/:id" element={<AdminLayout><EditBook /></AdminLayout>} />
         <Route path="/admin/books/new" element={<AdminLayout><div className="bg-white p-8 border border-black">
           <h2 className="text-2xl font-serif font-bold mb-6">Create New Book Listing</h2>
           <p className="text-sm text-gray-500 mb-8 italic">The form would handle image upload, slug generation, and metadata tags.</p>

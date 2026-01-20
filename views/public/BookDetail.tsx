@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Book } from '../../types';
 import { storage } from '../../services/storage';
 
@@ -10,14 +10,25 @@ export const BookDetail: React.FC = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'details' | 'confirm'>('details');
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    const books = storage.getBooks();
-    const found = books.find(b => b.slug === slug);
-    if (found) setBook(found);
+    const refresh = () => {
+      const books = storage.getBooks();
+      const found = books.find(b => b.slug === slug);
+      if (found) setBook(found);
+    };
+
+    refresh();
+    window.addEventListener('odero_books_updated', refresh);
+    return () => window.removeEventListener('odero_books_updated', refresh);
   }, [slug]);
 
   if (!book) return <div className="py-40 text-center font-serif text-2xl">Searching the archives...</div>;
+
+  const formatKes = (amount: number) => `KES ${amount.toLocaleString()}`;
+
+  const totalAmount = book.price * quantity;
 
   const handleCheckout = () => {
     setIsProcessing(true);
@@ -27,7 +38,7 @@ export const BookDetail: React.FC = () => {
         bookId: book.id,
         customerName: 'Guest User',
         customerEmail: 'guest@example.com',
-        amount: book.price,
+        amount: totalAmount,
         status: 'Completed',
         createdAt: new Date().toISOString()
       });
@@ -43,7 +54,7 @@ export const BookDetail: React.FC = () => {
           <img 
             src={book.coverImage} 
             alt={book.title} 
-            className="w-full shadow-2xl border-8 border-white grayscale hover:grayscale-0 transition-all duration-500"
+            className="w-full shadow-2xl border-8 border-white transition-all duration-500"
           />
         </div>
         <div className="flex flex-col justify-center">
@@ -53,11 +64,15 @@ export const BookDetail: React.FC = () => {
             {book.synopsis}
           </div>
           <div className="mb-10 flex items-baseline gap-4">
-            <span className="text-3xl font-bold">KES {book.price.toLocaleString()}</span>
-            <span className="text-gray-400 line-through">KES {(book.price * 1.2).toLocaleString()}</span>
+            <span className="text-3xl font-bold">{formatKes(book.price)}</span>
+            <span className="text-gray-400 line-through">{formatKes(book.price * 1.2)}</span>
           </div>
           <button 
-            onClick={() => setShowPayment(true)}
+            onClick={() => {
+              setQuantity(1);
+              setStep('details');
+              setShowPayment(true);
+            }}
             className="bg-black text-white px-12 py-5 uppercase text-sm tracking-widest font-bold hover:bg-white hover:text-black border border-black transition-all"
           >
             Buy Now
@@ -77,9 +92,38 @@ export const BookDetail: React.FC = () => {
                     <span className="text-gray-500">Book</span>
                     <span className="font-bold">{book.title}</span>
                   </div>
+                  <div className="flex justify-between border-b pb-2 items-center">
+                    <span className="text-gray-500">Quantity</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        aria-label="Decrease quantity"
+                        className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        readOnly
+                        aria-label="Quantity"
+                        value={quantity}
+                        className="w-12 h-9 border border-black text-center focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => q + 1)}
+                        aria-label="Increase quantity"
+                        className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex justify-between border-b pb-2">
                     <span className="text-gray-500">Total</span>
-                    <span className="font-bold">KES {book.price}</span>
+                    <span className="font-bold">{formatKes(totalAmount)}</span>
                   </div>
                 </div>
                 
