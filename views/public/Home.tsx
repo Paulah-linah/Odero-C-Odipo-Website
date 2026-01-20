@@ -2,21 +2,32 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Book } from '../../types';
-import { storage } from '../../services/storage';
+import { booksApi } from '../../services/books';
 
 export const Home: React.FC = () => {
   const [featuredBook, setFeaturedBook] = useState<Book | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const refresh = () => {
-      const books = storage.getBooks();
-      const featured = books.find(b => b.isFeatured) || books[0];
-      setFeaturedBook(featured);
+    let mounted = true;
+
+    const refresh = async () => {
+      setError('');
+      try {
+        const books = await booksApi.list();
+        if (!mounted) return;
+        const featured = books.find((b) => b.isFeatured) || books[0] || null;
+        setFeaturedBook(featured);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load books');
+      }
     };
 
     refresh();
-    window.addEventListener('odero_books_updated', refresh);
-    return () => window.removeEventListener('odero_books_updated', refresh);
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -52,6 +63,13 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Featured Book */}
+      {error && (
+        <section className="bg-red-50 py-6 px-6 md:px-12 border-y border-black">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-red-600 text-xs font-bold">{error}</div>
+          </div>
+        </section>
+      )}
       {featuredBook && (
         <section className="bg-gray-50 py-24 px-6 md:px-12 border-y border-black">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 items-center">

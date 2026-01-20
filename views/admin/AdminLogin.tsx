@@ -1,22 +1,34 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { storage } from '../../services/storage';
+import { supabase } from '../../services/supabaseClient';
 
 export const AdminLogin: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple mock authentication
-    if (username === 'admin' && password === 'odero2024') {
-      storage.setSession({ id: '1', username: 'admin', role: 'admin' });
+
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
       navigate('/admin/dashboard');
-    } else {
-      setError('Invalid credentials. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -35,13 +47,13 @@ export const AdminLogin: React.FC = () => {
           
           <div className="space-y-6">
             <div>
-              <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-500 mb-2">Username</label>
+              <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-500 mb-2">Email</label>
               <input 
                 type="text" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full border-b-2 border-gray-100 p-2 focus:outline-none focus:border-black transition-colors"
-                placeholder="admin"
+                placeholder="you@example.com"
               />
             </div>
             <div>
@@ -55,8 +67,11 @@ export const AdminLogin: React.FC = () => {
               />
             </div>
             
-            <button className="w-full bg-black text-white py-4 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 transition-colors">
-              Authenticate
+            <button
+              disabled={isSubmitting}
+              className="w-full bg-black text-white py-4 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-60"
+            >
+              {isSubmitting ? 'Authenticating...' : 'Authenticate'}
             </button>
           </div>
           

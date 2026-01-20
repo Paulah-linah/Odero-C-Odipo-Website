@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Book } from '../../types';
+import { booksApi } from '../../services/books';
 import { storage } from '../../services/storage';
 
 export const BookDetail: React.FC = () => {
@@ -11,20 +12,48 @@ export const BookDetail: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'details' | 'confirm'>('details');
   const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const refresh = () => {
-      const books = storage.getBooks();
-      const found = books.find(b => b.slug === slug);
-      if (found) setBook(found);
+    let mounted = true;
+
+    const refresh = async () => {
+      if (!slug) {
+        setBook(null);
+        return;
+      }
+
+      setError('');
+      setIsLoading(true);
+      try {
+        const found = await booksApi.getBySlug(slug);
+        if (!mounted) return;
+        setBook(found);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load book');
+        setBook(null);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     };
 
     refresh();
-    window.addEventListener('odero_books_updated', refresh);
-    return () => window.removeEventListener('odero_books_updated', refresh);
+    return () => {
+      mounted = false;
+    };
   }, [slug]);
 
-  if (!book) return <div className="py-40 text-center font-serif text-2xl">Searching the archives...</div>;
+  if (isLoading) return <div className="py-40 text-center font-serif text-2xl">Searching the archives...</div>;
+
+  if (!book) {
+    return (
+      <div className="py-40 text-center font-serif text-2xl">
+        {error || 'Book not found.'}
+      </div>
+    );
+  }
 
   const formatKes = (amount: number) => `KES ${amount.toLocaleString()}`;
 

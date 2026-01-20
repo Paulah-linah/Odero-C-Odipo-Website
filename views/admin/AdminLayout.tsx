@@ -1,22 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { storage } from '../../services/storage';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '../../services/supabaseClient';
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const session = storage.getSession();
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  if (!session) {
-    navigate('/admin');
-    return null;
-  }
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      setIsAuthReady(true);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      setIsAuthReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (!session) {
+      navigate('/admin');
+    }
+  }, [isAuthReady, session, navigate]);
 
   const handleLogout = () => {
-    storage.clearSession();
-    navigate('/admin');
+    supabase.auth.signOut().finally(() => navigate('/admin'));
   };
 
   const menuItems = [
@@ -28,6 +52,10 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   ];
 
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  if (!isAuthReady || !session) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">

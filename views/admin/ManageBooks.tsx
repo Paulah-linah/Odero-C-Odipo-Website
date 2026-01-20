@@ -1,34 +1,78 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { storage } from '../../services/storage';
 import { Book } from '../../types';
+import { booksApi } from '../../services/books';
+import { supabase } from '../../services/supabaseClient';
 
 export const ManageBooks: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const refresh = () => setBooks(storage.getBooks());
+    let mounted = true;
+
+    const refresh = async () => {
+      setError('');
+      setIsLoading(true);
+      try {
+        const list = await booksApi.list();
+        if (!mounted) return;
+        setBooks(list);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load books');
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
     refresh();
-    window.addEventListener('odero_books_updated', refresh);
-    return () => window.removeEventListener('odero_books_updated', refresh);
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this book?')) {
-      const updated = books.filter(b => b.id !== id);
-      storage.saveBooks(updated);
-      setBooks(updated);
+  const refresh = async () => {
+    const list = await booksApi.list();
+    setBooks(list);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this book?')) return;
+    try {
+      await booksApi.remove(id);
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to delete book');
     }
   };
 
-  const toggleFeatured = (id: string) => {
-    const updated = books.map(b => ({
-      ...b,
-      isFeatured: b.id === id ? !b.isFeatured : false // Only one featured book allowed
-    }));
-    storage.saveBooks(updated);
-    setBooks(updated);
+  const toggleFeatured = async (id: string) => {
+    const current = books.find((b) => b.id === id);
+    if (!current) return;
+
+    setError('');
+    try {
+      if (current.isFeatured) {
+        await booksApi.update(id, { is_featured: false });
+        await refresh();
+        return;
+      }
+
+      const { error: clearError } = await supabase
+        .from('books')
+        .update({ is_featured: false })
+        .neq('id', id);
+
+      if (clearError) throw clearError;
+
+      await booksApi.update(id, { is_featured: true });
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to update featured book');
+    }
   };
 
   return (
@@ -37,6 +81,10 @@ export const ManageBooks: React.FC = () => {
         <h1 className="text-3xl font-serif font-bold">Books Library</h1>
         <Link to="/admin/books/new" className="bg-black text-white px-6 py-3 w-full sm:w-auto text-center uppercase text-xs font-bold tracking-widest hover:bg-gray-800 transition-colors">Add New Book</Link>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>
+      )}
 
       <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto rounded-sm">
         <table className="w-full text-left min-w-[600px]">
@@ -49,7 +97,11 @@ export const ManageBooks: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {books.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-gray-400 italic">Loading books...</td>
+              </tr>
+            ) : books.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-gray-400 italic">No books found in the archives.</td>
               </tr>
@@ -58,7 +110,11 @@ export const ManageBooks: React.FC = () => {
                 <tr key={book.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <img src={book.coverImage} className="w-10 h-14 object-cover flex-shrink-0" alt="" />
+                      {book.coverImage ? (
+                        <img src={book.coverImage} className="w-10 h-14 object-cover flex-shrink-0" alt="" />
+                      ) : (
+                        <div className="w-10 h-14 bg-gray-100 border border-gray-200 flex-shrink-0" />
+                      )}
                       <div>
                         <p className="font-serif font-bold text-sm">{book.title}</p>
                         {book.isFeatured && <span className="text-[9px] bg-black text-white px-2 py-0.5 uppercase tracking-tighter">Featured</span>}

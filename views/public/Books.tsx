@@ -1,17 +1,36 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Book, BookStatus } from '../../types';
-import { storage } from '../../services/storage';
+import { Book } from '../../types';
+import { booksApi } from '../../services/books';
 
 export const Books: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const refresh = () => setBooks(storage.getBooks());
+    let mounted = true;
+
+    const refresh = async () => {
+      setError('');
+      setIsLoading(true);
+      try {
+        const list = await booksApi.list();
+        if (!mounted) return;
+        setBooks(list);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load books');
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
     refresh();
-    window.addEventListener('odero_books_updated', refresh);
-    return () => window.removeEventListener('odero_books_updated', refresh);
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -20,6 +39,14 @@ export const Books: React.FC = () => {
       <p className="text-gray-500 mb-16 max-w-xl">
         Explore the complete bibliography of Odipo C. Odero. From published memoirs to experimental anthologies.
       </p>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>
+      )}
+
+      {isLoading && (
+        <div className="text-gray-400 italic mb-10">Loading books...</div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
         {books.map(book => (

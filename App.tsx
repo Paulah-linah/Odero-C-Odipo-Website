@@ -15,6 +15,7 @@ import { AdminLayout } from './views/admin/AdminLayout';
 import { Dashboard } from './views/admin/Dashboard';
 import { ManageBooks } from './views/admin/ManageBooks';
 import { EditBook } from './views/admin/EditBook';
+import { CreateBook } from './views/admin/CreateBook';
 
 const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <>
@@ -42,16 +43,7 @@ const App: React.FC = () => {
         <Route path="/admin/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
         <Route path="/admin/books" element={<AdminLayout><ManageBooks /></AdminLayout>} />
         <Route path="/admin/books/edit/:id" element={<AdminLayout><EditBook /></AdminLayout>} />
-        <Route path="/admin/books/new" element={<AdminLayout><div className="bg-white p-8 border border-black">
-          <h2 className="text-2xl font-serif font-bold mb-6">Create New Book Listing</h2>
-          <p className="text-sm text-gray-500 mb-8 italic">The form would handle image upload, slug generation, and metadata tags.</p>
-          <div className="space-y-4">
-            <input placeholder="Title" className="w-full border border-black p-3" />
-            <textarea placeholder="Synopsis" className="w-full border border-black p-3 h-32" />
-            <input placeholder="Price (KES)" className="w-full border border-black p-3" />
-            <button className="bg-black text-white px-8 py-3 uppercase text-xs font-bold tracking-widest">Save Draft</button>
-          </div>
-        </div></AdminLayout>} />
+        <Route path="/admin/books/new" element={<AdminLayout><CreateBook /></AdminLayout>} />
         <Route path="/admin/blog" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Manage Blog Entries</div></AdminLayout>} />
         <Route path="/admin/events" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Manage Scheduled Events</div></AdminLayout>} />
         <Route path="/admin/settings" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Site Configuration</div></AdminLayout>} />

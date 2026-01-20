@@ -1,0 +1,5 @@
+[functions.upload-book-cover]
+verify_jwt = false
+
+[functions.create-book]
+verify_jwt = false
