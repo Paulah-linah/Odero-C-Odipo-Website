@@ -22,6 +22,50 @@ export const EditBook: React.FC = () => {
 
   const title = useMemo(() => (book ? `Edit: ${book.title}` : 'Edit Book'), [book]);
 
+  const encodeImageFile = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.onload = () => {
+        const src = reader.result;
+        if (typeof src !== 'string') {
+          reject(new Error('Invalid file data'));
+          return;
+        }
+
+        img.onload = () => {
+          const maxW = 800;
+          const maxH = 1200;
+          let { width, height } = img;
+
+          const scale = Math.min(maxW / width, maxH / height, 1);
+          const targetW = Math.max(1, Math.round(width * scale));
+          const targetH = Math.max(1, Math.round(height * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            resolve(src);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, targetW, targetH);
+          const encoded = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(encoded);
+        };
+
+        img.onerror = () => resolve(src);
+        img.src = src;
+      };
+
+      reader.readAsDataURL(file);
+    });
+
   const handleCoverUpload: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !book) return;
@@ -30,14 +74,13 @@ export const EditBook: React.FC = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === 'string') {
-        setBook({ ...book, coverImage: result });
-      }
-    };
-    reader.readAsDataURL(file);
+    const encoded = await encodeImageFile(file);
+    const updatedBook = { ...book, coverImage: encoded };
+    setBook(updatedBook);
+
+    const books = storage.getBooks();
+    const updated = books.map((b) => (b.id === updatedBook.id ? updatedBook : b));
+    storage.saveBooks(updated);
   };
 
   const handleSave = () => {
