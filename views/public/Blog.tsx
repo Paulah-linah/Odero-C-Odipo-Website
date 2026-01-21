@@ -49,7 +49,7 @@ export const Blog: React.FC = () => {
     };
   }, []);
 
-  const fetchBlogPosts = async () => {
+  const fetchBlogPosts = async (retryCount = 0) => {
     try {
       setLoading(true);
       console.log('=== BLOG FETCH DEBUG ===');
@@ -58,6 +58,7 @@ export const Blog: React.FC = () => {
       console.log('Online:', navigator.onLine);
       console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+      console.log('Retry attempt:', retryCount);
       
       // Add cache-busting timestamp
       const timestamp = Date.now();
@@ -74,6 +75,15 @@ export const Blog: React.FC = () => {
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
         console.error('Error details:', error.details);
+        
+        // Handle AbortError specifically
+        if (error.message?.includes('AbortError') || error.message?.includes('aborted')) {
+          console.log('AbortError detected, retrying...');
+          if (retryCount < 3) {
+            setTimeout(() => fetchBlogPosts(retryCount + 1), 1000 * (retryCount + 1));
+            return;
+          }
+        }
         
         // Fallback: try without status filter if RLS is blocking
         if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
@@ -116,9 +126,18 @@ export const Blog: React.FC = () => {
       console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
       console.error('Error stack:', err instanceof Error ? err.stack : 'No stack available');
       
+      // Handle AbortError in catch block
+      if (err instanceof Error && err.message?.includes('AbortError') && retryCount < 3) {
+        console.log('AbortError in catch, retrying...');
+        setTimeout(() => fetchBlogPosts(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+      
       setError(`Failed to load blog posts: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
-      setLoading(false);
+      if (retryCount === 0) {
+        setLoading(false);
+      }
     }
   };
 
