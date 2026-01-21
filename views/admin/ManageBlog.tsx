@@ -147,12 +147,12 @@ export const ManageBlog: React.FC = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl font-serif font-bold">Manage Blog Posts</h2>
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <h2 className="text-xl md:text-2xl font-serif font-bold">Manage Blog Posts</h2>
         <button
           onClick={() => setIsCreating(true)}
-          className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors"
+          className="bg-black text-white px-4 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors w-full sm:w-auto"
         >
           Create New Post
         </button>
@@ -164,25 +164,25 @@ export const ManageBlog: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white border border-black">
+      <div className="bg-white border border-black overflow-x-auto">
         {blogPosts.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-8 md:p-12 text-center text-gray-500">
             No blog posts found. Create your first post to get started.
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 min-w-[600px]">
             {blogPosts.map(post => (
-              <div key={post.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-serif font-bold">{post.title}</h3>
+              <div key={post.id} className="p-4 md:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                      <h3 className="text-base md:text-lg font-serif font-bold truncate">{post.title}</h3>
                       {post.featured && (
-                        <span className="bg-black text-white px-2 py-1 text-xs uppercase tracking-widest font-bold">
+                        <span className="bg-black text-white px-2 py-1 text-xs uppercase tracking-widest font-bold flex-shrink-0">
                           Featured
                         </span>
                       )}
-                      <span className={`px-2 py-1 text-xs uppercase tracking-widest font-bold ${
+                      <span className={`px-2 py-1 text-xs uppercase tracking-widest font-bold flex-shrink-0 ${
                         post.status === 'published' 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-600'
@@ -190,8 +190,8 @@ export const ManageBlog: React.FC = () => {
                         {post.status}
                       </span>
                     </div>
-                    <p className="text-gray-600 mb-3 line-clamp-2">{post.excerpt}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <p className="text-gray-600 mb-3 line-clamp-2 text-sm md:text-base">{post.excerpt}</p>
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500">
                       <span>{post.category}</span>
                       <span>•</span>
                       <span>{post.date}</span>
@@ -199,8 +199,7 @@ export const ManageBlog: React.FC = () => {
                       <span>{post.read_time}</span>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 lg:ml-4 flex-shrink-0">
                     <button
                       onClick={() => {
                         setSelectedPost(post);
