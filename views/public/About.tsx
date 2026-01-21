@@ -6,7 +6,7 @@ export const About: React.FC = () => {
       {/* Hero Section */}
       <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-serif font-bold mb-6 italic">About the Author</h1>
+          <h1 className="text-5xl font-serif font-bold mb-6 italic">The Author's Journey</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Exploring the silence between words. A Nairobi-based author dedicated to literary intimacy and storytelling.
           </p>
