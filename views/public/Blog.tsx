@@ -49,95 +49,31 @@ export const Blog: React.FC = () => {
     };
   }, []);
 
-  const fetchBlogPosts = async (retryCount = 0) => {
+  const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('=== BLOG FETCH DEBUG ===');
-      console.log('User Agent:', navigator.userAgent);
-      console.log('Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
-      console.log('Online:', navigator.onLine);
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
-      console.log('Retry attempt:', retryCount);
+      console.log('Fetching blog posts...');
       
-      // Add cache-busting timestamp
-      const timestamp = Date.now();
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('status', 'published')
         .order('updated_at', { ascending: false });
 
-      console.log('Supabase response:', { data, error, count: data?.length, timestamp });
+      console.log('Blog posts fetched:', { data, error, count: data?.length });
 
       if (error) {
-        console.error('Supabase error details:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        console.error('Error details:', error.details);
-        
-        // Handle AbortError specifically
-        if (error.message?.includes('AbortError') || error.message?.includes('aborted')) {
-          console.log('AbortError detected, retrying...');
-          if (retryCount < 3) {
-            setTimeout(() => fetchBlogPosts(retryCount + 1), 1000 * (retryCount + 1));
-            return;
-          }
-        }
-        
-        // Fallback: try without status filter if RLS is blocking
-        if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
-          console.log('Trying fallback without status filter...');
-          const fallbackData = await supabase
-            .from('blog_posts')
-            .select('*')
-            .order('updated_at', { ascending: false });
-          
-          if (fallbackData.data && !fallbackData.error) {
-            console.log('Fallback successful, posts:', fallbackData.data.length);
-            setBlogPosts([...fallbackData.data]);
-            setLastUpdated(Date.now());
-            setLoading(false);
-            return;
-          }
-        }
+        console.error('Supabase error:', error);
         throw error;
       }
       
-      // Force re-render by creating new array reference
-      setBlogPosts([...(data || [])]);
+      setBlogPosts(data || []);
       setLastUpdated(Date.now());
-      
-      // Log each post for debugging
-      data?.forEach((post, index) => {
-        console.log(`Post ${index + 1}:`, {
-          id: post.id,
-          title: post.title,
-          status: post.status,
-          featured: post.featured,
-          updated_at: post.updated_at
-        });
-      });
-      
-      console.log('=== END BLOG FETCH DEBUG ===');
     } catch (err) {
-      console.error('=== CATCH BLOCK DEBUG ===');
-      console.error('Error type:', typeof err);
-      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
-      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack available');
-      
-      // Handle AbortError in catch block
-      if (err instanceof Error && err.message?.includes('AbortError') && retryCount < 3) {
-        console.log('AbortError in catch, retrying...');
-        setTimeout(() => fetchBlogPosts(retryCount + 1), 1000 * (retryCount + 1));
-        return;
-      }
-      
+      console.error('Error fetching blog posts:', err);
       setError(`Failed to load blog posts: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
-      if (retryCount === 0) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
