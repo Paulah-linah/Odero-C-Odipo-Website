@@ -1,6 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export const Contact: React.FC = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      // Create mailto link with form data
+      const subject = encodeURIComponent(formData.subject);
+      const body = encodeURIComponent(
+        `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+      );
+      
+      const mailtoUrl = `mailto:oderocodipo@gmail.com?subject=${subject}&body=${body}`;
+      
+      // Try multiple methods to open email client
+      const opened = window.open(mailtoUrl, '_blank');
+      
+      // Fallback if window.open fails
+      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+        // Try creating a link element
+        const link = document.createElement('a');
+        link.href = mailtoUrl;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      setSubmitStatus('success');
+      // Reset form
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -18,22 +71,30 @@ export const Contact: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white p-12 border border-black shadow-xl">
             <h2 className="text-2xl font-serif font-bold mb-8 italic">Send a Message</h2>
-            <form className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-sm uppercase tracking-widest font-bold mb-3">Name</label>
                   <input 
                     type="text" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     className="w-full border-b-2 border-gray-200 p-3 focus:outline-none focus:border-black transition-colors"
                     placeholder="Your name"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm uppercase tracking-widest font-bold mb-3">Email</label>
                   <input 
                     type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full border-b-2 border-gray-200 p-3 focus:outline-none focus:border-black transition-colors"
                     placeholder="your.email@example.com"
+                    required
                   />
                 </div>
               </div>
@@ -42,8 +103,12 @@ export const Contact: React.FC = () => {
                 <label className="block text-sm uppercase tracking-widest font-bold mb-3">Subject</label>
                 <input 
                   type="text" 
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
                   className="w-full border-b-2 border-gray-200 p-3 focus:outline-none focus:border-black transition-colors"
                   placeholder="What's this about?"
+                  required
                 />
               </div>
               
@@ -51,16 +116,55 @@ export const Contact: React.FC = () => {
                 <label className="block text-sm uppercase tracking-widest font-bold mb-3">Message</label>
                 <textarea 
                   rows={6}
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   className="w-full border-b-2 border-gray-200 p-3 focus:outline-none focus:border-black transition-colors resize-none"
                   placeholder="Your thoughts, questions, or collaboration ideas..."
+                  required
                 />
               </div>
               
+              {submitStatus === 'success' && (
+                <div className="bg-green-50 text-green-600 p-4 text-sm font-bold">
+                  <div className="mb-2">Email client should have opened. If not, please email directly:</div>
+                  <div className="flex items-center justify-center space-x-4">
+                    <a href="mailto:oderocodipo@gmail.com" className="underline hover:text-black">
+                      oderocodipo@gmail.com
+                    </a>
+                    <button 
+                      onClick={() => {
+                        const subject = encodeURIComponent(formData.subject || 'Contact from website');
+                        const body = encodeURIComponent(
+                          `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+                        );
+                        const link = document.createElement('a');
+                        link.href = `mailto:oderocodipo@gmail.com?subject=${subject}&body=${body}`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="bg-black text-white px-4 py-2 text-xs uppercase tracking-widest hover:bg-gray-800"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {submitStatus === 'error' && (
+                <div className="bg-red-50 text-red-600 p-4 text-sm font-bold">
+                  Something went wrong. Please try again or email directly.
+                </div>
+              )}
+              
               <button 
                 type="submit"
-                className="w-full bg-black text-white py-4 uppercase text-sm font-bold tracking-widest hover:bg-gray-800 transition-colors"
+                disabled={isSubmitting}
+                className="w-full bg-black text-white py-4 uppercase text-sm font-bold tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-60"
               >
-                Send Message
+                {isSubmitting ? 'Opening Email Client...' : 'Send Message'}
               </button>
             </form>
           </div>
@@ -98,8 +202,8 @@ export const Contact: React.FC = () => {
               </div>
               <h3 className="text-xl font-serif font-bold mb-4">Phone</h3>
               <p className="text-gray-600 mb-2">
-                <a href="tel:+254700000000" className="hover:text-black transition-colors">
-                  +254 728 788 515
+                <a href="tel:+254704060687" className="hover:text-black transition-colors">
+                  +254 704 060 687
                 </a>
               </p>
               <p className="text-sm text-gray-500">Mon-Fri 9am-6pm EAT</p>
