@@ -36,7 +36,7 @@ export const AdminLogin: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="max-w-md w-full">
         <div className="text-center mb-12">
-          <Link to="/" className="text-5xl font-signature inline-block">Odipo C. Odero</Link>
+          <Link to="/" className="text-5xl font-great-vibes inline-block">Odipo C. Odero</Link>
           <p className="uppercase text-[10px] tracking-widest font-bold text-gray-400 mt-2">Private Access Only</p>
         </div>
         

@@ -6,7 +6,7 @@ export const Footer: React.FC = () => {
     <footer className="border-t border-black py-12 px-6 bg-white">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 className="text-4xl font-signature mb-4">Odipo C. Odero</h3>
+          <h3 className="text-4xl font-great-vibes">Odipo C. Odero</h3>
           <p className="text-sm text-gray-600 max-w-xs leading-relaxed">
             Exploring the silence between words. A Nairobi-based author dedicated to literary intimacy and storytelling.
           </p>

@@ -22,7 +22,7 @@ export const Navbar: React.FC = () => {
         <Link
           to="/"
           aria-label={brandText}
-          className="uppercase text-sm tracking-widest font-semibold leading-none"
+          className="text-3xl font-great-vibes leading-tight"
         >
           <span className="sr-only">{brandText}</span>
           <span aria-hidden="true" className="odipo-brand-typing">

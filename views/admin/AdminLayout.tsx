@@ -61,7 +61,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* Mobile Top Bar */}
       <div className="md:hidden bg-black text-white p-4 flex justify-between items-center sticky top-0 z-[60]">
-        <Link to="/" className="text-xl font-signature leading-none">Odipo C. Odero</Link>
+        <Link to="/" className="text-xl font-great-vibes leading-none">Odipo C. Odero</Link>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 text-2xl focus:outline-none"
@@ -87,7 +87,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         md:translate-x-0 md:sticky md:top-0 md:h-screen
       `}>
         <div className="p-8 border-b border-gray-800 hidden md:block">
-          <Link to="/" className="text-3xl font-signature leading-none block">
+          <Link to="/" className="text-3xl font-great-vibes leading-none block">
             Odipo C. Odero
           </Link>
           <p className="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-bold italic">Admin Control</p>
