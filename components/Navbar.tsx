@@ -59,7 +59,7 @@ export const Navbar: React.FC = () => {
           <Link
             to="/"
             onClick={() => setIsOpen(false)}
-            className="mb-4 uppercase tracking-widest font-semibold text-base"
+            className="mb-4 uppercase tracking-widest font-semibold text-2xl font-great-vibes"
           >
             {brandText}
           </Link>
