@@ -52,7 +52,22 @@ export const Blog: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching blog posts...');
+      console.log('Testing Supabase connection...');
+      
+      // First test basic connection
+      const { data: testData, error: testError } = await supabase
+        .from('blog_posts')
+        .select('count')
+        .limit(1);
+      
+      console.log('Connection test:', { testData, testError });
+      
+      if (testError) {
+        console.error('Connection failed:', testError);
+        throw testError;
+      }
+      
+      console.log('Connection successful, fetching posts...');
       
       const { data, error } = await supabase
         .from('blog_posts')
