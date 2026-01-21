@@ -10,6 +10,7 @@ import { Books } from './views/public/Books';
 import { BookDetail } from './views/public/BookDetail';
 import { Contact } from './views/public/Contact';
 import { About } from './views/public/About';
+import { Blog } from './views/public/Blog';
 
 // Admin Views
 import { AdminLogin } from './views/admin/AdminLogin';
@@ -35,7 +36,7 @@ const App: React.FC = () => {
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/books" element={<PublicLayout><Books /></PublicLayout>} />
         <Route path="/books/:slug" element={<PublicLayout><BookDetail /></PublicLayout>} />
-        <Route path="/blog" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Blog Archive Coming Soon</div></PublicLayout>} />
+        <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/events" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Literary Events</div></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />

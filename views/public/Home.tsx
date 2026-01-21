@@ -36,7 +36,7 @@ export const Home: React.FC = () => {
       <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="order-2 lg:order-1">
           <h1 className="text-6xl md:text-8xl font-serif font-bold leading-tight mb-8">
-            Stories <br/> In <br/> Black & White.
+          Uncoloured <br/>Stories.
           </h1>
           <p className="text-lg text-gray-600 mb-10 max-w-md leading-relaxed">
             Odipo C. Odero is a writer of nuances, capturing the intricate dance of Kenyan life through the lens of memory and observation.
