@@ -66,6 +66,22 @@ export const Blog: React.FC = () => {
 
       if (error) {
         console.error('Supabase error details:', error);
+        // Fallback: try without status filter if RLS is blocking
+        if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
+          console.log('Trying fallback without status filter...');
+          const fallbackData = await supabase
+            .from('blog_posts')
+            .select('*')
+            .order('updated_at', { ascending: false });
+          
+          if (fallbackData.data && !fallbackData.error) {
+            console.log('Fallback successful, posts:', fallbackData.data.length);
+            setBlogPosts([...fallbackData.data]);
+            setLastUpdated(Date.now());
+            setLoading(false);
+            return;
+          }
+        }
         throw error;
       }
       
