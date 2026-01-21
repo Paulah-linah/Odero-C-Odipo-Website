@@ -20,6 +20,7 @@ import { ManageBooks } from './views/admin/ManageBooks';
 import { EditBook } from './views/admin/EditBook';
 import { CreateBook } from './views/admin/CreateBook';
 import { ManageBlog } from './views/admin/ManageBlog';
+import { ManageComingSoon } from './views/admin/ManageComingSoon';
 
 const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <>
@@ -49,6 +50,7 @@ const App: React.FC = () => {
         <Route path="/admin/books/edit/:id" element={<AdminLayout><EditBook /></AdminLayout>} />
         <Route path="/admin/books/new" element={<AdminLayout><CreateBook /></AdminLayout>} />
         <Route path="/admin/blog" element={<AdminLayout><ManageBlog /></AdminLayout>} />
+        <Route path="/admin/coming-soon" element={<AdminLayout><ManageComingSoon /></AdminLayout>} />
         <Route path="/admin/events" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Manage Scheduled Events</div></AdminLayout>} />
         <Route path="/admin/settings" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Site Configuration</div></AdminLayout>} />
         

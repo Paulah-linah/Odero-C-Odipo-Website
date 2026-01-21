@@ -1,11 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Book } from '../../types';
+import { Book, BookStatus } from '../../types';
 import { booksApi } from '../../services/books';
 
 export const Home: React.FC = () => {
   const [featuredBook, setFeaturedBook] = useState<Book | null>(null);
+  const [comingSoonBooks, setComingSoonBooks] = useState<Book[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -18,6 +19,10 @@ export const Home: React.FC = () => {
         if (!mounted) return;
         const featured = books.find((b) => b.isFeatured) || books[0] || null;
         setFeaturedBook(featured);
+        
+        // Filter for coming soon books
+        const comingSoon = books.filter(book => book.status === BookStatus.COMING_SOON);
+        setComingSoonBooks(comingSoon);
       } catch (e: any) {
         if (!mounted) return;
         setError(e?.message ?? 'Failed to load books');
@@ -97,20 +102,47 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* Coming Soon Tease */}
-      <section className="py-24 px-6 text-center">
-        <h3 className="text-3xl font-serif mb-12">Coming Soon to Your Bookshelf</h3>
-        <div className="flex flex-wrap justify-center gap-12">
-          {[1,2,3].map(i => (
-            <div key={i} className="w-48 group">
-              <div className="h-64 bg-gray-100 border border-dashed border-gray-400 flex items-center justify-center mb-4 transition-all group-hover:bg-white group-hover:border-black">
-                <span className="font-serif text-gray-400 group-hover:text-black">Untitled #{i}</span>
+      {/* Coming Soon Books */}
+      {comingSoonBooks.length > 0 && (
+        <section className="py-24 px-6 text-center">
+          <h3 className="text-3xl font-serif mb-12">Coming Soon to Your Bookshelf</h3>
+          <div className="flex flex-wrap justify-center gap-12">
+            {comingSoonBooks.map(book => (
+              <div key={book.id} className="w-48 group">
+                <div className="h-64 bg-gray-100 border border-dashed border-gray-400 flex items-center justify-center mb-4 transition-all group-hover:bg-white group-hover:border-black">
+                  {book.coverImage ? (
+                    <img 
+                      src={book.coverImage} 
+                      alt={book.title} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-serif text-gray-400 group-hover:text-black">{book.title}</span>
+                  )}
+                </div>
+                <p className="uppercase text-[10px] tracking-widest font-bold">{book.title}</p>
               </div>
-              <p className="uppercase text-[10px] tracking-widest font-bold">In Development</p>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Coming Soon Placeholder - Only show when no coming soon books exist */}
+      {comingSoonBooks.length === 0 && (
+        <section className="py-24 px-6 text-center">
+          <h3 className="text-3xl font-serif mb-12">Coming Soon to Your Bookshelf</h3>
+          <div className="flex flex-wrap justify-center gap-12">
+            {[1,2,3].map(i => (
+              <div key={i} className="w-48 group">
+                <div className="h-64 bg-gray-100 border border-dashed border-gray-400 flex items-center justify-center mb-4 transition-all group-hover:bg-white group-hover:border-black">
+                  <span className="font-serif text-gray-400 group-hover:text-black">Untitled #{i}</span>
+                </div>
+                <p className="uppercase text-[10px] tracking-widest font-bold">In Development</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
