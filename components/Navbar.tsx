@@ -54,7 +54,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-40 flex flex-col items-center justify-center space-y-8 text-2xl font-serif">
+        <div className="md:hidden fixed inset-0 bg-white z-40 flex flex-col items-center justify-center space-y-8">
           <button onClick={() => setIsOpen(false)} className="absolute top-6 right-6 text-3xl">✕</button>
           <Link
             to="/"
