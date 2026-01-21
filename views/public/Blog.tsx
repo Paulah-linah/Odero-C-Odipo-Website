@@ -52,7 +52,12 @@ export const Blog: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching fresh blog posts...', 'Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+      console.log('=== BLOG FETCH DEBUG ===');
+      console.log('User Agent:', navigator.userAgent);
+      console.log('Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+      console.log('Online:', navigator.onLine);
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
       
       // Add cache-busting timestamp
       const timestamp = Date.now();
@@ -62,10 +67,14 @@ export const Blog: React.FC = () => {
         .eq('status', 'published')
         .order('updated_at', { ascending: false });
 
-      console.log('Blog posts fetched:', { data, error, count: data?.length, timestamp });
+      console.log('Supabase response:', { data, error, count: data?.length, timestamp });
 
       if (error) {
         console.error('Supabase error details:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        
         // Fallback: try without status filter if RLS is blocking
         if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
           console.log('Trying fallback without status filter...');
@@ -99,8 +108,14 @@ export const Blog: React.FC = () => {
           updated_at: post.updated_at
         });
       });
+      
+      console.log('=== END BLOG FETCH DEBUG ===');
     } catch (err) {
-      console.error('Error fetching blog posts:', err);
+      console.error('=== CATCH BLOCK DEBUG ===');
+      console.error('Error type:', typeof err);
+      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack available');
+      
       setError(`Failed to load blog posts: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
