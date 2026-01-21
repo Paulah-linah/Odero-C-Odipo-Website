@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { Home } from './views/public/Home';
 import { Books } from './views/public/Books';
 import { BookDetail } from './views/public/BookDetail';
+import { Contact } from './views/public/Contact';
 
 // Admin Views
 import { AdminLogin } from './views/admin/AdminLogin';
@@ -36,7 +37,7 @@ const App: React.FC = () => {
         <Route path="/blog" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Blog Archive Coming Soon</div></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">The Author's Journey</div></PublicLayout>} />
         <Route path="/events" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Literary Events</div></PublicLayout>} />
-        <Route path="/contact" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Get in Touch</div></PublicLayout>} />
+        <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLogin />} />
