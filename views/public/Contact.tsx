@@ -57,7 +57,7 @@ export const Contact: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
+      <section className="py-8 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-serif font-bold mb-6 italic">Get in Touch</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">

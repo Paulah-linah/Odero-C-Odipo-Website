@@ -39,7 +39,7 @@ export const Home: React.FC = () => {
           Uncoloured <br/>Stories.
           </h1>
           <p className="text-lg text-gray-600 mb-10 max-w-md leading-relaxed">
-            Odipo C. Odero is a writer of nuances, capturing the intricate dance of Kenyan life through the lens of memory and observation.
+            Odipo C. Odero writes uncoloured stories- shaped by memory, love, loss, observation, and the quiet things we feel.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/books" className="bg-black text-white px-10 py-4 uppercase text-sm tracking-widest font-bold text-center hover:bg-white hover:text-black border border-black transition-all">
@@ -54,8 +54,8 @@ export const Home: React.FC = () => {
           <div className="relative group">
             <div className="absolute -inset-4 border border-black opacity-20 group-hover:opacity-100 transition-opacity"></div>
             <img 
-              src="https://images.unsplash.com/photo-1474932430478-367dbb6832c1?auto=format&fit=crop&q=80&w=800" 
-              alt="Stick figures sketching" 
+              src="/images/my-hero.jpeg" 
+              alt="Hero image" 
               className="w-full max-w-md grayscale shadow-2xl transition-transform hover:scale-[1.02]"
             />
           </div>

@@ -1,66 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../services/supabaseClient';
+
+interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  date: string;
+  read_time: string;
+  featured: boolean;
+  status: 'published' | 'draft';
+  created_at: string;
+  updated_at: string;
+}
 
 export const Blog: React.FC = () => {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [lastUpdated, setLastUpdated] = useState(Date.now());
 
   const categories = ['all', 'writing', 'literature', 'social commentary', 'personal reflections'];
-  
-  const blogPosts = [
-    {
-      id: 1,
-      title: 'The Art of Literary Intimacy',
-      excerpt: 'Exploring how writers create deep connections with readers through vulnerable storytelling and authentic voice.',
-      category: 'writing',
-      date: 'January 15, 2026',
-      readTime: '5 min read',
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Nairobi Stories: Urban Narratives',
-      excerpt: 'The city as character: how Nairobi\'s diverse neighborhoods and cultures shape contemporary Kenyan literature.',
-      category: 'literature',
-      date: 'January 10, 2026',
-      readTime: '7 min read',
-      featured: false
-    },
-    {
-      id: 3,
-      title: 'Writing as Social Commentary',
-      excerpt: 'The responsibility of authors to reflect social realities while maintaining artistic integrity and hope.',
-      category: 'social commentary',
-      date: 'January 5, 2026',
-      readTime: '6 min read',
-      featured: false
-    },
-    {
-      id: 4,
-      title: 'Finding Voice in Silence',
-      excerpt: 'Personal reflections on the spaces between words and how they often carry more meaning than the words themselves.',
-      category: 'personal reflections',
-      date: 'December 28, 2025',
-      readTime: '4 min read',
-      featured: false
-    },
-    {
-      id: 5,
-      title: 'The Craft of Character Development',
-      excerpt: 'Building believable characters that resonate with readers while serving the narrative\'s deeper themes.',
-      category: 'writing',
-      date: 'December 20, 2025',
-      readTime: '8 min read',
-      featured: false
-    },
-    {
-      id: 6,
-      title: 'Literature and Social Change',
-      excerpt: 'Examining how stories have historically driven social progress and continue to shape our collective consciousness.',
-      category: 'social commentary',
-      date: 'December 15, 2025',
-      readTime: '6 min read',
-      featured: false
+
+  useEffect(() => {
+    fetchBlogPosts();
+  }, []);
+
+  // Also fetch when component gains focus (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchBlogPosts();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchBlogPosts();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  const fetchBlogPosts = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching fresh blog posts...');
+      
+      // Try multiple approaches to bypass caching
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*', { count: 'exact' })
+        .eq('status', 'published')
+        .order('updated_at', { ascending: false }); // Changed to updated_at
+
+      console.log('Blog posts fetched:', { data, error, count: data?.length });
+
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
+      // Force re-render by creating new array reference
+      setBlogPosts([...(data || [])]);
+      setLastUpdated(Date.now());
+      
+      // Log each post for debugging
+      data?.forEach((post, index) => {
+        console.log(`Post ${index + 1}:`, {
+          id: post.id,
+          title: post.title,
+          status: post.status,
+          featured: post.featured,
+          updated_at: post.updated_at
+        });
+      });
+    } catch (err) {
+      console.error('Error fetching blog posts:', err);
+      setError(`Failed to load blog posts: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredPosts = selectedCategory === 'all' 
     ? blogPosts 
@@ -68,31 +96,80 @@ export const Blog: React.FC = () => {
 
   const featuredPost = blogPosts.find(post => post.featured);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-12 bg-gray-200 rounded mb-8 w-64"></div>
+            <div className="h-6 bg-gray-200 rounded mb-12 w-96"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-white border border-black p-6">
+                  <div className="h-6 bg-gray-200 rounded mb-4 w-24"></div>
+                  <div className="h-8 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-16 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-32"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="py-20 px-6 md:px-12 max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl font-serif font-bold mb-6 italic">Blog Archive</h1>
+          <div className="bg-red-50 text-red-600 p-8 rounded-lg max-w-md mx-auto">
+            <p className="mb-4">Unable to load blog posts at this time.</p>
+            <button
+              onClick={fetchBlogPosts}
+              className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
+      <section className="py-8 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-serif font-bold mb-6 italic">Blog Archive</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Thoughts on writing, literature, and the spaces between words. Exploring the craft and consciousness of storytelling.
+            Reflections & Observations
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            The Notebook
           </p>
         </div>
       </section>
 
       {/* Featured Post */}
       {featuredPost && (
-        <section className="py-12 px-6 md:px-12 bg-gray-50">
+        <section className="py-8 px-6 md:px-12 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white border border-black p-8 md:p-12">
               <div className="flex items-center justify-between mb-4">
                 <span className="bg-black text-white px-3 py-1 text-xs uppercase tracking-widest font-bold">Featured</span>
-                <span className="text-sm text-gray-500">{featuredPost.readTime}</span>
+                <span className="text-sm text-gray-500">{featuredPost.read_time}</span>
               </div>
               <h2 className="text-3xl font-serif font-bold mb-4 italic">{featuredPost.title}</h2>
               <p className="text-gray-600 leading-relaxed mb-6">{featuredPost.excerpt}</p>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">{featuredPost.date}</span>
+                <span className="text-sm text-gray-500">{new Date(featuredPost.date).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
                 <button className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors">
                   Read More
                 </button>
@@ -126,24 +203,38 @@ export const Blog: React.FC = () => {
       {/* Blog Posts Grid */}
       <section className="py-12 px-6 md:px-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredPosts.map(post => (
-              <article key={post.id} className="bg-white border border-black p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs uppercase tracking-widest text-gray-500">{post.category}</span>
-                  <span className="text-xs text-gray-500">{post.readTime}</span>
-                </div>
-                <h3 className="text-xl font-serif font-bold mb-3 italic">{post.title}</h3>
-                <p className="text-gray-600 leading-relaxed mb-4">{post.excerpt}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">{post.date}</span>
-                  <button className="text-sm font-bold uppercase tracking-widest hover:text-black transition-colors">
-                    Read More →
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+          {filteredPosts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">
+                {selectedCategory === 'all' 
+                  ? 'No published blog posts yet. Check back soon!' 
+                  : `No posts found in ${selectedCategory} category.`}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredPosts.map(post => (
+                <article key={post.id} className="bg-white border border-black p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs uppercase tracking-widest text-gray-500">{post.category}</span>
+                    <span className="text-xs text-gray-500">{post.read_time}</span>
+                  </div>
+                  <h3 className="text-xl font-serif font-bold mb-3 italic">{post.title}</h3>
+                  <p className="text-gray-600 leading-relaxed mb-4">{post.excerpt}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">{new Date(post.date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</span>
+                    <button className="text-sm font-bold uppercase tracking-widest hover:text-black transition-colors">
+                      Read More →
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
