@@ -15,15 +15,17 @@ export const Books: React.FC = () => {
     const refresh = async () => {
       setError('');
       setIsLoading(true);
+      console.log('Refreshing books...', 'Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+      
       try {
         const list = await booksApi.list();
         if (!mounted) return;
         setBooks(list);
-      } catch (e: any) {
-        if (!mounted) return;
-        setError(e?.message ?? 'Failed to load books');
+      } catch (err) {
+        console.error('Books refresh error:', err);
+        setError('Failed to load books');
       } finally {
-        if (mounted) setIsLoading(false);
+        setIsLoading(false);
       }
     };
 

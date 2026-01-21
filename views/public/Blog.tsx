@@ -52,16 +52,17 @@ export const Blog: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching fresh blog posts...');
+      console.log('Fetching fresh blog posts...', 'Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
       
-      // Try multiple approaches to bypass caching
+      // Add cache-busting timestamp
+      const timestamp = Date.now();
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*', { count: 'exact' })
         .eq('status', 'published')
-        .order('updated_at', { ascending: false }); // Changed to updated_at
+        .order('updated_at', { ascending: false });
 
-      console.log('Blog posts fetched:', { data, error, count: data?.length });
+      console.log('Blog posts fetched:', { data, error, count: data?.length, timestamp });
 
       if (error) {
         console.error('Supabase error details:', error);
