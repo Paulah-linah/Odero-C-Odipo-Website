@@ -135,7 +135,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({ blogPostId, initialLikes
         />
       </svg>
       <span className="font-medium text-sm">
-        {likes} {likes === 1 ? 'Like' : 'Likes'}
+        {likes}
       </span>
     </button>
   );
