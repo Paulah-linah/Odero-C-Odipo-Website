@@ -66,7 +66,9 @@ export const Books: React.FC = () => {
               </div>
               <h3 className="text-2xl font-serif font-bold mb-2 group-hover:underline underline-offset-4">{book.title}</h3>
               <p className="text-sm text-gray-500 line-clamp-2 italic mb-4">{book.synopsis}</p>
-              <p className="font-bold text-lg">KES {book.price.toLocaleString()}</p>
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-lg">KES {book.price.toLocaleString()}</p>
+              </div>
             </Link>
           </div>
         ))}

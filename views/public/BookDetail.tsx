@@ -98,13 +98,19 @@ export const BookDetail: React.FC = () => {
           </div>
           <button 
             onClick={() => {
+              if (book.status === 'Coming Soon') return;
               setQuantity(1);
               setStep('details');
               setShowPayment(true);
             }}
-            className="bg-black text-white px-12 py-5 uppercase text-sm tracking-widest font-bold hover:bg-white hover:text-black border border-black transition-all"
+            disabled={book.status === 'Coming Soon'}
+            className={`px-12 py-5 uppercase text-sm tracking-widest font-bold border border-black transition-all ${
+              book.status === 'Coming Soon'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-black text-white hover:bg-white hover:text-black'
+            }`}
           >
-            Buy Now
+            {book.status === 'Coming Soon' ? 'Coming Soon' : 'Buy Now'}
           </button>
         </div>
       </div>
