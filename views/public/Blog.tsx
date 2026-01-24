@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 
 interface BlogPost {
@@ -16,6 +17,7 @@ interface BlogPost {
 }
 
 export const Blog: React.FC = () => {
+  const navigate = useNavigate();
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +174,10 @@ export const Blog: React.FC = () => {
                   month: 'long', 
                   day: 'numeric' 
                 })}</span>
-                <button className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors">
+                <button 
+                  onClick={() => navigate(`/blog/${featuredPost.id}`)}
+                  className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors"
+                >
                   Read More
                 </button>
               </div>
@@ -229,7 +234,10 @@ export const Blog: React.FC = () => {
                       month: 'long', 
                       day: 'numeric' 
                     })}</span>
-                    <button className="text-sm font-bold uppercase tracking-widest hover:text-black transition-colors">
+                    <button 
+                      onClick={() => navigate(`/blog/${post.id}`)}
+                      className="text-sm font-bold uppercase tracking-widest hover:text-black transition-colors"
+                    >
                       Read More →
                     </button>
                   </div>

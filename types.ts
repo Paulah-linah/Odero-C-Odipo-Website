@@ -55,3 +55,14 @@ export interface Order {
   status: 'Pending' | 'Completed';
   createdAt: string;
 }
+
+export interface Comment {
+  id: string;
+  blog_post_id: string;
+  author_name: string;
+  author_email: string;
+  content: string;
+  status: 'approved' | 'pending' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
