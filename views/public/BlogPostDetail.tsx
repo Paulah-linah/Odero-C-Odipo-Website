@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { CommentSection } from '../../components/CommentSection';
+import { LikeButton } from '../../components/LikeButton';
 
 interface BlogPost {
   id: string;
@@ -112,11 +113,15 @@ export const BlogPostDetail: React.FC = () => {
       <article className="py-8 px-6 md:px-12 max-w-4xl mx-auto">
         {/* Header */}
         <header className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <span className="bg-black text-white px-3 py-1 text-xs uppercase tracking-widest font-bold">
-              {blogPost.category}
-            </span>
-            <span className="text-sm text-gray-500">{blogPost.read_time}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <span className="bg-black text-white px-3 py-1 text-xs uppercase tracking-widest font-bold">
+                {blogPost.category}
+              </span>
+              <span className="text-sm text-gray-500">{blogPost.read_time}</span>
+            </div>
+            
+            <LikeButton blogPostId={blogPost.id} />
           </div>
           
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 italic leading-tight">

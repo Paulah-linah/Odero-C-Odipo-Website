@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
+import { LikeButton } from '../../components/LikeButton';
 
 interface BlogPost {
   id: string;
@@ -164,7 +165,10 @@ export const Blog: React.FC = () => {
             <div className="bg-white border border-black p-8 md:p-12">
               <div className="flex items-center justify-between mb-4">
                 <span className="bg-black text-white px-3 py-1 text-xs uppercase tracking-widest font-bold">Featured</span>
-                <span className="text-sm text-gray-500">{featuredPost.read_time}</span>
+                <div className="flex items-center gap-3">
+                  <LikeButton blogPostId={featuredPost.id} />
+                  <span className="text-sm text-gray-500">{featuredPost.read_time}</span>
+                </div>
               </div>
               <h2 className="text-3xl font-serif font-bold mb-4 italic">{featuredPost.title}</h2>
               <p className="text-gray-600 leading-relaxed mb-6">{featuredPost.excerpt}</p>
@@ -222,9 +226,12 @@ export const Blog: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredPosts.map(post => (
                 <article key={post.id} className="bg-white border border-black p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between">
                     <span className="text-xs uppercase tracking-widest text-gray-500">{post.category}</span>
-                    <span className="text-xs text-gray-500">{post.read_time}</span>
+                    <div className="flex items-center gap-3">
+                      <LikeButton blogPostId={post.id} />
+                      <span className="text-xs text-gray-500">{post.read_time}</span>
+                    </div>
                   </div>
                   <h3 className="text-xl font-serif font-bold mb-3 italic">{post.title}</h3>
                   <p className="text-gray-600 leading-relaxed mb-4">{post.excerpt}</p>

@@ -66,3 +66,10 @@ export interface Comment {
   created_at: string;
   updated_at: string;
 }
+
+export interface BlogLike {
+  id: string;
+  blog_post_id: string;
+  user_ip: string;
+  created_at: string;
+}
