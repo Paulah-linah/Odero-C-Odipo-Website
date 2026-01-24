@@ -15,6 +15,7 @@ interface BlogPost {
   status: 'published' | 'draft';
   created_at: string;
   updated_at: string;
+  image_url?: string;
 }
 
 export const Blog: React.FC = () => {
@@ -170,6 +171,17 @@ export const Blog: React.FC = () => {
                   <span className="text-sm text-gray-500">{featuredPost.read_time}</span>
                 </div>
               </div>
+              {featuredPost.image_url && (
+                <div className="mb-6 max-w-sm mx-auto">
+                  <div className="aspect-square w-full overflow-hidden rounded-lg">
+                    <img 
+                      src={featuredPost.image_url} 
+                      alt={featuredPost.title} 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
               <h2 className="text-3xl font-serif font-bold mb-4 italic">{featuredPost.title}</h2>
               <p className="text-gray-600 leading-relaxed mb-6">{featuredPost.excerpt}</p>
               <div className="flex items-center justify-between">
@@ -233,6 +245,17 @@ export const Blog: React.FC = () => {
                       <span className="text-xs text-gray-500">{post.read_time}</span>
                     </div>
                   </div>
+                  {post.image_url && (
+                    <div className="my-4">
+                      <div className="aspect-square w-full overflow-hidden rounded-lg">
+                        <img 
+                          src={post.image_url} 
+                          alt={post.title} 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <h3 className="text-xl font-serif font-bold mb-3 italic">{post.title}</h3>
                   <p className="text-gray-600 leading-relaxed mb-4">{post.excerpt}</p>
                   <div className="flex items-center justify-between">
@@ -254,7 +277,6 @@ export const Blog: React.FC = () => {
           )}
         </div>
       </section>
-
       {/* Newsletter Section */}
       <section className="py-16 px-6 md:px-12 bg-white">
         <div className="max-w-4xl mx-auto text-center">

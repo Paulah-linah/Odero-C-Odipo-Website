@@ -16,6 +16,7 @@ interface BlogPost {
   status: 'published' | 'draft';
   created_at: string;
   updated_at: string;
+  image_url?: string;
 }
 
 export const BlogPostDetail: React.FC = () => {
@@ -123,6 +124,18 @@ export const BlogPostDetail: React.FC = () => {
             
             <LikeButton blogPostId={blogPost.id} />
           </div>
+          
+          {blogPost.image_url && (
+            <div className="mb-8 max-w-lg mx-auto">
+              <div className="aspect-square w-full overflow-hidden rounded-lg">
+                <img 
+                  src={blogPost.image_url} 
+                  alt={blogPost.title} 
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            </div>
+          )}
           
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 italic leading-tight">
             {blogPost.title}

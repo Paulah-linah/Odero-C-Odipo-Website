@@ -13,6 +13,7 @@ interface BlogPost {
   status: 'published' | 'draft';
   created_at: string;
   updated_at: string;
+  image_url?: string;
 }
 
 export const ManageBlog: React.FC = () => {
@@ -292,12 +293,46 @@ const EditBlogPost: React.FC<{
     date: post?.date || new Date().toISOString().split('T')[0],
     read_time: post?.read_time || '5 min read',
     featured: post?.featured || false,
-    status: post?.status || 'draft'
+    status: post?.status || 'draft',
+    image_url: post?.image_url || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const categories = ['writing', 'literature', 'social commentary', 'personal reflections'];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('blog-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, image_url: publicUrl }));
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      setError('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,6 +409,55 @@ const EditBlogPost: React.FC<{
                 className="w-full border-b-2 border-gray-200 p-3 focus:outline-none focus:border-black transition-colors"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm uppercase tracking-widest font-bold mb-3">Blog Image</label>
+              <div className="space-y-3">
+                {formData.image_url && (
+                  <div className="relative max-w-[80px]">
+                    <div className="aspect-square w-full overflow-hidden rounded-lg border border-gray-200">
+                      <img 
+                        src={formData.image_url} 
+                        alt="Blog post preview" 
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, image_url: '' })}
+                      className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className={`px-4 py-2 border border-gray-300 rounded-lg cursor-pointer transition-colors ${
+                      uploading 
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {uploading ? 'Uploading...' : 'Choose Image'}
+                  </label>
+                  {formData.image_url && (
+                    <span className="text-sm text-green-600">Image uploaded</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div>

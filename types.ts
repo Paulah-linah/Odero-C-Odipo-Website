@@ -28,6 +28,7 @@ export interface BlogPost {
   category: string;
   tags: string[];
   status: 'Draft' | 'Published';
+  image_url?: string;
 }
 
 export interface Event {
