@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 
 interface BlogPost {
@@ -17,12 +18,21 @@ interface BlogPost {
 }
 
 export const ManageBlog: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Check if we're on the /new route and auto-open create form
+  useEffect(() => {
+    if (location.pathname === '/admin/blog/new') {
+      setIsCreating(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchBlogPosts();
@@ -31,31 +41,13 @@ export const ManageBlog: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching blog posts...');
-      
-      // First test: Check if user is authenticated
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Auth session:', { session, sessionError });
-      
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-      
-      // Second test: Try to access the table
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Supabase response:', { data, error });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       setBlogPosts(data || []);
-      console.log('Blog posts loaded:', data?.length || 0);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch blog posts');
@@ -113,6 +105,16 @@ export const ManageBlog: React.FC = () => {
       await fetchBlogPosts();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update featured status');
+    }
+  };
+
+  const handleCloseEdit = () => {
+    setSelectedPost(null);
+    setIsEditing(false);
+    setIsCreating(false);
+    // Navigate back to main blog page if we were on /new route
+    if (location.pathname === '/admin/blog/new') {
+      navigate('/admin/blog');
     }
   };
 
@@ -260,16 +262,10 @@ export const ManageBlog: React.FC = () => {
           post={selectedPost}
           isEditing={isEditing}
           isCreating={isCreating}
-          onClose={() => {
-            setIsEditing(false);
-            setIsCreating(false);
-            setSelectedPost(null);
-          }}
+          onClose={handleCloseEdit}
           onSave={() => {
-            setIsEditing(false);
-            setIsCreating(false);
-            setSelectedPost(null);
             fetchBlogPosts();
+            handleCloseEdit();
           }}
         />
       )}
@@ -346,7 +342,15 @@ const EditBlogPost: React.FC<{
         const { error } = await supabase
           .from('blog_posts')
           .insert({
-            ...formData,
+            title: formData.title,
+            excerpt: formData.excerpt,
+            content: formData.content,
+            category: formData.category,
+            date: formData.date,
+            read_time: formData.read_time,
+            featured: formData.featured,
+            status: formData.status,
+            image_url: formData.image_url,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -357,7 +361,15 @@ const EditBlogPost: React.FC<{
         const { error } = await supabase
           .from('blog_posts')
           .update({
-            ...formData,
+            title: formData.title,
+            excerpt: formData.excerpt,
+            content: formData.content,
+            category: formData.category,
+            date: formData.date,
+            read_time: formData.read_time,
+            featured: formData.featured,
+            status: formData.status,
+            image_url: formData.image_url,
             updated_at: new Date().toISOString()
           })
           .eq('id', post.id);

@@ -53,6 +53,7 @@ const App: React.FC = () => {
         <Route path="/admin/books/edit/:id" element={<AdminLayout><EditBook /></AdminLayout>} />
         <Route path="/admin/books/new" element={<AdminLayout><CreateBook /></AdminLayout>} />
         <Route path="/admin/blog" element={<AdminLayout><ManageBlog /></AdminLayout>} />
+        <Route path="/admin/blog/new" element={<AdminLayout><ManageBlog /></AdminLayout>} />
         <Route path="/admin/comments" element={<AdminLayout><ManageComments /></AdminLayout>} />
         <Route path="/admin/coming-soon" element={<AdminLayout><ManageComingSoon /></AdminLayout>} />
         <Route path="/admin/events" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Manage Scheduled Events</div></AdminLayout>} />

@@ -56,41 +56,21 @@ export const Blog: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
-      console.log('Testing Supabase connection...');
-      
-      // First test basic connection
-      const { data: testData, error: testError } = await supabase
-        .from('blog_posts')
-        .select('count')
-        .limit(1);
-      
-      console.log('Connection test:', { testData, testError });
-      
-      if (testError) {
-        console.error('Connection failed:', testError);
-        throw testError;
-      }
-      
-      console.log('Connection successful, fetching posts...');
-      
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
         .eq('status', 'published')
-        .order('updated_at', { ascending: false });
-
-      console.log('Blog posts fetched:', { data, error, count: data?.length });
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error:', error);
         throw error;
       }
       
       setBlogPosts(data || []);
       setLastUpdated(Date.now());
     } catch (err) {
-      console.error('Error fetching blog posts:', err);
-      setError(`Failed to load blog posts: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Public fetch error:', err);
+      setError('Unable to load blog posts at this time.');
     } finally {
       setLoading(false);
     }

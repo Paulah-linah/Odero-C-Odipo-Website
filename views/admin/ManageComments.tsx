@@ -3,9 +3,7 @@ import { supabase } from '../../services/supabaseClient';
 import { Comment } from '../../types';
 
 interface CommentWithPost extends Comment {
-  blog_posts: {
-    title: string;
-  };
+  blog_post_title?: string;
 }
 
 export const ManageComments: React.FC = () => {
@@ -24,12 +22,7 @@ export const ManageComments: React.FC = () => {
       
       let query = supabase
         .from('comments')
-        .select(`
-          *,
-          blog_posts (
-            title
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply filter
@@ -40,7 +33,34 @@ export const ManageComments: React.FC = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setComments(data || []);
+
+      const baseComments = (data || []) as Comment[];
+      const postIds = Array.from(
+        new Set(baseComments.map(c => c.blog_post_id).filter(Boolean))
+      );
+
+      if (postIds.length === 0) {
+        setComments(baseComments);
+        return;
+      }
+
+      const { data: postsData, error: postsError } = await supabase
+        .from('blog_posts')
+        .select('id, title')
+        .in('id', postIds);
+
+      if (postsError) throw postsError;
+
+      const titleById = new Map<string, string>(
+        (postsData || []).map((p: any) => [p.id as string, p.title as string])
+      );
+
+      const merged: CommentWithPost[] = baseComments.map(c => ({
+        ...c,
+        blog_post_title: titleById.get(c.blog_post_id) || 'Unknown Post'
+      }));
+
+      setComments(merged);
     } catch (err) {
       console.error('Error fetching comments:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch comments');
@@ -252,7 +272,7 @@ export const ManageComments: React.FC = () => {
 
                   {/* Blog Post Reference */}
                   <div className="text-sm text-gray-500">
-                    On: <span className="font-medium">{comment.blog_posts?.title || 'Unknown Post'}</span>
+                    On: <span className="font-medium">{comment.blog_post_title || 'Unknown Post'}</span>
                   </div>
 
                   {/* Comment Content */}
