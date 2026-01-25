@@ -12,6 +12,7 @@ import { Contact } from './views/public/Contact';
 import { About } from './views/public/About';
 import { Blog } from './views/public/Blog';
 import { BlogPostDetail } from './views/public/BlogPostDetail';
+import { Events } from './views/public/Events';
 
 // Admin Views
 import { AdminLogin } from './views/admin/AdminLogin';
@@ -23,6 +24,7 @@ import { CreateBook } from './views/admin/CreateBook';
 import { ManageBlog } from './views/admin/ManageBlog';
 import { ManageComments } from './views/admin/ManageComments';
 import { ManageComingSoon } from './views/admin/ManageComingSoon';
+import { ManageEvents } from './views/admin/ManageEvents';
 
 const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <>
@@ -43,7 +45,7 @@ const App: React.FC = () => {
         <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
         <Route path="/blog/:id" element={<PublicLayout><BlogPostDetail /></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
-        <Route path="/events" element={<PublicLayout><div className="py-20 text-center font-serif text-3xl">Literary Events</div></PublicLayout>} />
+        <Route path="/events" element={<PublicLayout><Events /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
 
         {/* Admin Routes */}
@@ -56,7 +58,7 @@ const App: React.FC = () => {
         <Route path="/admin/blog/new" element={<AdminLayout><ManageBlog /></AdminLayout>} />
         <Route path="/admin/comments" element={<AdminLayout><ManageComments /></AdminLayout>} />
         <Route path="/admin/coming-soon" element={<AdminLayout><ManageComingSoon /></AdminLayout>} />
-        <Route path="/admin/events" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Manage Scheduled Events</div></AdminLayout>} />
+        <Route path="/admin/events" element={<AdminLayout><ManageEvents /></AdminLayout>} />
         <Route path="/admin/settings" element={<AdminLayout><div className="py-20 text-center font-serif text-3xl">Site Configuration</div></AdminLayout>} />
         
         {/* Fallback */}
