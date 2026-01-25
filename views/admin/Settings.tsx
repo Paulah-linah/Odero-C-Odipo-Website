@@ -269,9 +269,6 @@ export const Settings: React.FC = () => {
             />
             <span className="text-sm font-bold">Maintenance mode</span>
           </label>
-          <p className="text-xs text-gray-500">
-            This only stores a flag for now. If you want, I can wire it into the public site to show a maintenance page.
-          </p>
         </section>
       </div>
     </div>
