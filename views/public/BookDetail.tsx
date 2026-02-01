@@ -4,16 +4,21 @@ import { useParams } from 'react-router-dom';
 import { Book } from '../../types';
 import { booksApi } from '../../services/books';
 import { storage } from '../../services/storage';
+import { supabase } from '../../services/supabaseClient';
 
 export const BookDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [book, setBook] = useState<Book | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState<'details' | 'confirm'>('details');
+  const [showSummary, setShowSummary] = useState(false);
+  const [showMpesa, setShowMpesa] = useState(false);
+  const [showBuyerInfo, setShowBuyerInfo] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [buyerPhone, setBuyerPhone] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -59,21 +64,60 @@ export const BookDetail: React.FC = () => {
 
   const totalAmount = book.price * quantity;
 
-  const handleCheckout = () => {
-    setIsProcessing(true);
-    setTimeout(() => {
-      storage.addOrder({
-        id: Math.random().toString(36).substr(2, 9),
-        bookId: book.id,
-        customerName: 'Guest User',
-        customerEmail: 'guest@example.com',
-        amount: totalAmount,
-        status: 'Completed',
-        createdAt: new Date().toISOString()
-      });
-      setIsProcessing(false);
-      setStep('confirm');
-    }, 2000);
+  const handleBuyNow = () => {
+    if (book?.status === 'Coming Soon') return;
+    setQuantity(1);
+    setBuyerPhone('');
+    setPaymentReference('');
+    setError('');
+    setShowSummary(true);
+  };
+
+  const handleConfirmSummary = () => {
+    setShowSummary(false);
+    setShowMpesa(true);
+  };
+
+  const handleMpesaConfirm = () => {
+    setShowMpesa(false);
+    setShowBuyerInfo(true);
+  };
+
+  const handleSubmitPurchase = async () => {
+    if (!book) return;
+    if (!buyerPhone.trim()) {
+      setError('Please enter your phone number');
+      return;
+    }
+    if (!paymentReference.trim()) {
+      setError('Please enter the M-Pesa Transaction ID');
+      return;
+    }
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const { error: insertError } = await supabase
+        .from('purchases')
+        .insert({
+          book_id: book.id,
+          book_title: book.title,
+          buyer_phone: buyerPhone.trim(),
+          quantity,
+          unit_price: book.price,
+          total_amount: totalAmount,
+          status: 'pending',
+          payment_reference: paymentReference.trim()
+        });
+      if (insertError) throw insertError;
+      // Success: close modals and show confirmation
+      setShowBuyerInfo(false);
+      setShowSuccess(true);
+    } catch (err: any) {
+      console.error('Purchase error:', err);
+      setError(err?.message || 'Failed to save purchase. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -97,12 +141,7 @@ export const BookDetail: React.FC = () => {
             <span className="text-gray-400 line-through">{formatKes(book.price * 1.2)}</span>
           </div>
           <button 
-            onClick={() => {
-              if (book.status === 'Coming Soon') return;
-              setQuantity(1);
-              setStep('details');
-              setShowPayment(true);
-            }}
+            onClick={handleBuyNow}
             disabled={book.status === 'Coming Soon'}
             className={`px-12 py-5 uppercase text-sm tracking-widest font-bold border border-black transition-all ${
               book.status === 'Coming Soon'
@@ -115,89 +154,196 @@ export const BookDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Payment Modal Sandbox */}
-      {showPayment && (
+      {/* Purchase Summary Modal */}
+      {showSummary && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 p-4">
           <div className="bg-white p-8 max-w-md w-full border-t-8 border-black shadow-2xl">
-            {step === 'details' ? (
-              <>
-                <h2 className="text-2xl font-serif font-bold mb-6">Complete Purchase</h2>
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-gray-500">Book</span>
-                    <span className="font-bold">{book.title}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2 items-center">
-                    <span className="text-gray-500">Quantity</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        aria-label="Decrease quantity"
-                        className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        readOnly
-                        aria-label="Quantity"
-                        value={quantity}
-                        className="w-12 h-9 border border-black text-center focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => q + 1)}
-                        aria-label="Increase quantity"
-                        className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-gray-500">Total</span>
-                    <span className="font-bold">{formatKes(totalAmount)}</span>
-                  </div>
-                </div>
-                
-                <div className="mb-8">
-                  <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">M-Pesa Number</label>
-                  <input type="text" placeholder="254712345678" className="w-full border border-black p-3 focus:outline-none" />
-                </div>
-
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setShowPayment(false)}
-                    className="flex-1 border border-black py-3 uppercase text-xs font-bold tracking-widest"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleCheckout}
-                    disabled={isProcessing}
-                    className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {isProcessing ? 'Processing...' : 'Confirm'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-white text-3xl">✓</span>
-                </div>
-                <h2 className="text-3xl font-serif font-bold mb-4">Thank You!</h2>
-                <p className="text-gray-600 mb-8">Your order for <span className="font-bold">{book.title}</span> has been processed successfully. (Sandbox Mode)</p>
-                <button 
-                  onClick={() => setShowPayment(false)}
-                  className="w-full bg-black text-white py-4 uppercase text-xs font-bold tracking-widest"
-                >
-                  Return to Site
-                </button>
+            <h2 className="text-2xl font-serif font-bold mb-6">Purchase Summary</h2>
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Book</span>
+                <span className="font-bold">{book.title}</span>
               </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Unit Price</span>
+                <span className="font-bold">{formatKes(book.price)}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2 items-center">
+                <span className="text-gray-500">Quantity</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    aria-label="Decrease quantity"
+                    className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    readOnly
+                    aria-label="Quantity"
+                    value={quantity}
+                    className="w-12 h-9 border border-black text-center focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    aria-label="Increase quantity"
+                    className="w-9 h-9 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-between border-b pb-2 text-lg">
+                <span className="text-gray-500 font-bold">Total</span>
+                <span className="font-bold">{formatKes(totalAmount)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowSummary(false)}
+                className="flex-1 border border-black py-3 uppercase text-xs font-bold tracking-widest"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSummary}
+                className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* M-Pesa Payment Instructions Popup */}
+      {showMpesa && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 p-4">
+          <div className="bg-white p-8 max-w-md w-full border-t-8 border-black shadow-2xl">
+            <h2 className="text-2xl font-serif font-bold mb-6">M-Pesa Payment Instructions</h2>
+            <div className="space-y-4 mb-8">
+              <div className="bg-gray-50 p-4 border border-black">
+                <p className="text-sm font-bold mb-2">Paybill Number</p>
+                <p className="text-xl font-mono">542542</p>
+              </div>
+              <div className="bg-gray-50 p-4 border border-black">
+                <p className="text-sm font-bold mb-2">Account Number</p>
+                <p className="text-xl font-mono">788515</p>
+              </div>
+              <p className="text-sm text-gray-600">Please make the payment to the above Paybill and keep the transaction ID.</p>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowMpesa(false)}
+                className="flex-1 border border-black py-3 uppercase text-xs font-bold tracking-widest"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleMpesaConfirm}
+                className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800"
+              >
+                I have paid / Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Buyer Information Capture */}
+      {showBuyerInfo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 p-4">
+          <div className="bg-white p-8 max-w-md w-full border-t-8 border-black shadow-2xl">
+            <h2 className="text-2xl font-serif font-bold mb-6">Confirm Your Details</h2>
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Book</span>
+                <span className="font-bold">{book.title}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Quantity</span>
+                <span className="font-bold">{quantity}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Total Amount</span>
+                <span className="font-bold">{formatKes(totalAmount)}</span>
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Phone Number (M-Pesa)</label>
+                <input
+                  type="tel"
+                  placeholder="254712345678"
+                  value={buyerPhone}
+                  onChange={(e) => setBuyerPhone(e.target.value)}
+                  className="w-full border border-black p-3 focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">M-Pesa Transaction ID</label>
+                <input
+                  type="text"
+                  placeholder="M-Pesa Transaction ID"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  className="w-full border border-black p-3 focus:outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 text-xs font-bold mb-4">{error}</div>
             )}
+
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowBuyerInfo(false)}
+                className="flex-1 border border-black py-3 uppercase text-xs font-bold tracking-widest"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitPurchase}
+                disabled={isSubmitting}
+                className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Saving...' : 'Submit Purchase'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    {/* Success Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 p-4">
+          <div className="bg-white p-8 max-w-md w-full border-t-8 border-black shadow-2xl text-center">
+            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-white text-3xl">✓</span>
+            </div>
+            <h2 className="text-3xl font-serif font-bold mb-4">Thank You!</h2>
+            <p className="text-gray-600 mb-8">
+              Your purchase for <span className="font-bold">{book.title}</span> has been recorded. Please complete payment via M-Pesa.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSuccess(false)}
+              className="w-full bg-black text-white py-4 uppercase text-xs font-bold tracking-widest"
+            >
+              Return to Site
+            </button>
           </div>
         </div>
       )}
