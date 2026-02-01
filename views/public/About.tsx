@@ -20,22 +20,29 @@ export const About: React.FC = () => {
             <div>
               <h2 className="text-3xl font-serif font-bold mb-6 italic">Odipo C. Odero</h2>
               <p className="text-gray-600 leading-relaxed mb-6">
-                Odipo C. Odero is a Nairobi-based author whose work explores the intricate landscapes of human experience through 
-                intimate storytelling and poetic prose. With a keen eye for detail and a deep understanding of the human condition, 
-                Odipo crafts narratives that resonate with readers on both emotional and intellectual levels.
+                A contemporary writer observing the world from the margins, with quiet confidence and emotional depth. 
               </p>
               <p className="text-gray-600 leading-relaxed mb-6">
-                His writing journey began with a simple observation: stories are the threads that connect us all. 
-                This philosophy permeates his work, creating pieces that serve as bridges between diverse experiences and perspectives.
-              </p>
-              <p className="text-gray-600 leading-relaxed">
-                Whether exploring themes of love, loss, identity, or social change, Odipo approaches each subject with 
-                nuance, empathy, and a distinctive voice that is both accessible and profound.
+                He writes about people who are present but not fully here, and the conversations we have when no one is watching.
               </p>
             </div>
             
             <div className="text-center">
-              <div className="w-64 h-64 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <img 
+                src="/images/author-photo.jpeg" 
+                alt="Odipo C. Odero" 
+                className="w-64 h-64 rounded-full mx-auto mb-6 object-cover border-4 border-white shadow-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-64 h-64 bg-gray-200 rounded-full mx-auto mb-6 items-center justify-center border-4 border-white shadow-lg"
+                style={{ display: 'none' }}
+              >
                 <span className="text-gray-500 text-sm">Author Photo</span>
               </div>
               <div className="text-left space-y-4">
