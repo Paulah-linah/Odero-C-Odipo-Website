@@ -27,6 +27,17 @@ export const ManageBlog: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
+  const getErrText = (err: unknown, fallback: string) => {
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      const anyErr = err as any;
+      const parts = [anyErr.message, anyErr.details, anyErr.hint, anyErr.code].filter(Boolean);
+      if (parts.length > 0) return parts.join(' | ');
+    }
+    if (err instanceof Error) return err.message;
+    return fallback;
+  };
+
   // Check if we're on the /new route and auto-open create form
   useEffect(() => {
     if (location.pathname === '/admin/blog/new') {
@@ -50,7 +61,7 @@ export const ManageBlog: React.FC = () => {
       setBlogPosts(data || []);
     } catch (err) {
       console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch blog posts');
+      setError(getErrText(err, 'Failed to fetch blog posts'));
     } finally {
       setLoading(false);
     }
@@ -68,7 +79,7 @@ export const ManageBlog: React.FC = () => {
       if (error) throw error;
       await fetchBlogPosts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete blog post');
+      setError(getErrText(err, 'Failed to delete blog post'));
     }
   };
 
@@ -82,7 +93,7 @@ export const ManageBlog: React.FC = () => {
       if (error) throw error;
       await fetchBlogPosts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update blog post status');
+      setError(getErrText(err, 'Failed to update blog post status'));
     }
   };
 
@@ -104,7 +115,7 @@ export const ManageBlog: React.FC = () => {
       if (error) throw error;
       await fetchBlogPosts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update featured status');
+      setError(getErrText(err, 'Failed to update featured status'));
     }
   };
 
@@ -296,6 +307,17 @@ const EditBlogPost: React.FC<{
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const getErrText = (err: unknown, fallback: string) => {
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      const anyErr = err as any;
+      const parts = [anyErr.message, anyErr.details, anyErr.hint, anyErr.code].filter(Boolean);
+      if (parts.length > 0) return parts.join(' | ');
+    }
+    if (err instanceof Error) return err.message;
+    return fallback;
+  };
+
   const categories = ['writing', 'literature', 'social commentary', 'personal reflections'];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -337,23 +359,26 @@ const EditBlogPost: React.FC<{
 
     try {
       console.log('Saving blog post...', formData);
+
+      const basePayload: Record<string, any> = {
+        title: formData.title,
+        excerpt: formData.excerpt,
+        content: formData.content,
+        category: formData.category,
+        date: formData.date,
+        read_time: formData.read_time,
+        featured: formData.featured,
+        status: formData.status
+      };
+
+      if (formData.image_url) {
+        basePayload.image_url = formData.image_url;
+      }
       
       if (isCreating) {
         const { error } = await supabase
           .from('blog_posts')
-          .insert({
-            title: formData.title,
-            excerpt: formData.excerpt,
-            content: formData.content,
-            category: formData.category,
-            date: formData.date,
-            read_time: formData.read_time,
-            featured: formData.featured,
-            status: formData.status,
-            image_url: formData.image_url,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+          .insert(basePayload);
 
         if (error) throw error;
         console.log('Blog post created successfully');
@@ -361,15 +386,7 @@ const EditBlogPost: React.FC<{
         const { error } = await supabase
           .from('blog_posts')
           .update({
-            title: formData.title,
-            excerpt: formData.excerpt,
-            content: formData.content,
-            category: formData.category,
-            date: formData.date,
-            read_time: formData.read_time,
-            featured: formData.featured,
-            status: formData.status,
-            image_url: formData.image_url,
+            ...basePayload,
             updated_at: new Date().toISOString()
           })
           .eq('id', post.id);
@@ -381,7 +398,7 @@ const EditBlogPost: React.FC<{
       onSave();
     } catch (err) {
       console.error('Save error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save blog post');
+      setError(getErrText(err, 'Failed to save blog post'));
     } finally {
       setLoading(false);
     }
