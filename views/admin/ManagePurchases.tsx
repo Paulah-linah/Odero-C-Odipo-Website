@@ -6,10 +6,12 @@ interface Purchase {
   book_id: string;
   book_title: string;
   buyer_phone: string;
+  buyer_email?: string;
   quantity: number;
   unit_price: number;
   total_amount: number;
   status: 'pending' | 'paid' | 'completed' | 'cancelled';
+  payment_method?: string;
   payment_reference?: string;
   created_at: string;
   updated_at: string;
@@ -78,7 +80,8 @@ export const ManagePurchases: React.FC = () => {
     const matchesStatus = filterStatus === 'all' || p.status === filterStatus;
     const matchesSearch = searchQuery.trim() === '' || 
       p.book_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.buyer_phone.includes(searchQuery);
+      p.buyer_phone.includes(searchQuery) ||
+      (p.buyer_email || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -139,7 +142,7 @@ export const ManagePurchases: React.FC = () => {
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search by book title or phone..."
+            placeholder="Search by book title, phone, or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full border border-black p-3 focus:outline-none focus:border-black transition-colors"
@@ -190,6 +193,18 @@ export const ManagePurchases: React.FC = () => {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500">
                       <span>Phone: {purchase.buyer_phone}</span>
+                      {purchase.buyer_email && (
+                        <>
+                          <span>•</span>
+                          <span>Email: {purchase.buyer_email}</span>
+                        </>
+                      )}
+                      {purchase.payment_method && (
+                        <>
+                          <span>•</span>
+                          <span>Method: {purchase.payment_method}</span>
+                        </>
+                      )}
                       <span>•</span>
                       <span>{formatDate(purchase.created_at)}</span>
                       {purchase.payment_reference && (

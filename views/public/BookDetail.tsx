@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Book } from '../../types';
 import { booksApi } from '../../services/books';
 import { storage } from '../../services/storage';
 import { supabase } from '../../services/supabaseClient';
+import { startPaystackCheckout } from '../../services/paystack';
 
 export const BookDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -16,6 +16,8 @@ export const BookDetail: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [buyerPhone, setBuyerPhone] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card'>('mpesa');
   const [paymentReference, setPaymentReference] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,8 @@ export const BookDetail: React.FC = () => {
     if (book?.status === 'Coming Soon') return;
     setQuantity(1);
     setBuyerPhone('');
+    setBuyerEmail('');
+    setPaymentMethod('mpesa');
     setPaymentReference('');
     setError('');
     setShowSummary(true);
@@ -85,36 +89,60 @@ export const BookDetail: React.FC = () => {
 
   const handleSubmitPurchase = async () => {
     if (!book) return;
-    if (!buyerPhone.trim()) {
-      setError('Please enter your phone number');
+    if (!buyerEmail.trim()) {
+      setError('Please enter your email address');
       return;
     }
-    if (!paymentReference.trim()) {
-      setError('Please enter the M-Pesa Transaction ID');
+    if (!buyerPhone.trim()) {
+      setError('Please enter your phone number');
       return;
     }
     setIsSubmitting(true);
     setError('');
     try {
+      const reference = `book_${book.id}_${Date.now()}`;
+      const channels = paymentMethod === 'mpesa' ? ['mobile_money'] : ['card'];
+
+      const resp = await startPaystackCheckout({
+        email: buyerEmail.trim(),
+        amountKes: totalAmount,
+        reference,
+        channels,
+        metadata: {
+          book_id: book.id,
+          book_title: book.title,
+          quantity,
+          unit_price: book.price,
+          total_amount: totalAmount,
+          buyer_phone: buyerPhone.trim(),
+          payment_method: paymentMethod,
+        },
+      });
+
+      const paidRef = resp?.reference || reference;
+      setPaymentReference(paidRef);
+
       const { error: insertError } = await supabase
         .from('purchases')
         .insert({
           book_id: book.id,
           book_title: book.title,
           buyer_phone: buyerPhone.trim(),
+          buyer_email: buyerEmail.trim(),
           quantity,
           unit_price: book.price,
           total_amount: totalAmount,
-          status: 'pending',
-          payment_reference: paymentReference.trim()
+          status: 'paid',
+          payment_method: paymentMethod,
+          payment_reference: paidRef,
         });
       if (insertError) throw insertError;
-      // Success: close modals and show confirmation
+
       setShowBuyerInfo(false);
       setShowSuccess(true);
     } catch (err: any) {
       console.error('Purchase error:', err);
-      setError(err?.message || 'Failed to save purchase. Please try again.');
+      setError(err?.message || 'Payment failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -227,17 +255,35 @@ export const BookDetail: React.FC = () => {
       {showMpesa && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 p-4">
           <div className="bg-white p-8 max-w-md w-full border-t-8 border-black shadow-2xl">
-            <h2 className="text-2xl font-serif font-bold mb-6">M-Pesa Payment Instructions</h2>
+            <h2 className="text-2xl font-serif font-bold mb-6">Choose Payment Method</h2>
             <div className="space-y-4 mb-8">
-              <div className="bg-gray-50 p-4 border border-black">
-                <p className="text-sm font-bold mb-2">Paybill Number</p>
-                <p className="text-xl font-mono">542542</p>
-              </div>
-              <div className="bg-gray-50 p-4 border border-black">
-                <p className="text-sm font-bold mb-2">Account Number</p>
-                <p className="text-xl font-mono">788515</p>
-              </div>
-              <p className="text-sm text-gray-600">Please make the payment to the above Paybill and keep the transaction ID.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('mpesa');
+                  handleMpesaConfirm();
+                }}
+                className={`w-full p-4 border-2 border-black flex items-center justify-between transition-colors ${
+                  paymentMethod === 'mpesa' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
+                }`}
+              >
+                <span className="font-bold">M-Pesa (Paystack)</span>
+                <span className="text-xs uppercase tracking-widest">Mobile Money</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('card');
+                  handleMpesaConfirm();
+                }}
+                className={`w-full p-4 border-2 border-black flex items-center justify-between transition-colors ${
+                  paymentMethod === 'card' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
+                }`}
+              >
+                <span className="font-bold">Bank Card (Paystack)</span>
+                <span className="text-xs uppercase tracking-widest">Visa / Mastercard</span>
+              </button>
             </div>
 
             <div className="flex gap-4">
@@ -247,13 +293,6 @@ export const BookDetail: React.FC = () => {
                 className="flex-1 border border-black py-3 uppercase text-xs font-bold tracking-widest"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleMpesaConfirm}
-                className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800"
-              >
-                I have paid / Confirm
               </button>
             </div>
           </div>
@@ -278,6 +317,21 @@ export const BookDetail: React.FC = () => {
                 <span className="text-gray-500">Total Amount</span>
                 <span className="font-bold">{formatKes(totalAmount)}</span>
               </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500">Payment Method</span>
+                <span className="font-bold">{paymentMethod === 'mpesa' ? 'M-Pesa' : 'Bank Card'}</span>
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={buyerEmail}
+                  onChange={(e) => setBuyerEmail(e.target.value)}
+                  className="w-full border border-black p-3 focus:outline-none"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Phone Number (M-Pesa)</label>
                 <input
@@ -285,17 +339,6 @@ export const BookDetail: React.FC = () => {
                   placeholder="254712345678"
                   value={buyerPhone}
                   onChange={(e) => setBuyerPhone(e.target.value)}
-                  className="w-full border border-black p-3 focus:outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">M-Pesa Transaction ID</label>
-                <input
-                  type="text"
-                  placeholder="M-Pesa Transaction ID"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value)}
                   className="w-full border border-black p-3 focus:outline-none"
                   required
                 />
@@ -320,7 +363,7 @@ export const BookDetail: React.FC = () => {
                 disabled={isSubmitting}
                 className="flex-1 bg-black text-white py-3 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 disabled:opacity-50"
               >
-                {isSubmitting ? 'Saving...' : 'Submit Purchase'}
+                {isSubmitting ? 'Processing...' : `Pay ${formatKes(totalAmount)}`}
               </button>
             </div>
           </div>
