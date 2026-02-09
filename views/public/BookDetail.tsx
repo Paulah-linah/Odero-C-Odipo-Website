@@ -267,7 +267,7 @@ export const BookDetail: React.FC = () => {
                   paymentMethod === 'mpesa' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
                 }`}
               >
-                <span className="font-bold">M-Pesa (Paystack)</span>
+                <span className="font-bold">M-Pesa</span>
                 <span className="text-xs uppercase tracking-widest">Mobile Money</span>
               </button>
 
@@ -281,7 +281,7 @@ export const BookDetail: React.FC = () => {
                   paymentMethod === 'card' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
                 }`}
               >
-                <span className="font-bold">Bank Card (Paystack)</span>
+                <span className="font-bold">Bank Card</span>
                 <span className="text-xs uppercase tracking-widest">Visa / Mastercard</span>
               </button>
             </div>

@@ -50,7 +50,6 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { name: 'Comments', path: '/admin/comments', icon: '💬' },
     { name: 'Coming Soon', path: '/admin/coming-soon', icon: '📅' },
     { name: 'Events', path: '/admin/events', icon: '📅' },
-    { name: 'Purchases', path: '/admin/purchases', icon: '🧾' },
     { name: 'Settings', path: '/admin/settings', icon: '⚙️' },
   ];
 
