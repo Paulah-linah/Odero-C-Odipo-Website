@@ -21,9 +21,10 @@ export const Books: React.FC = () => {
         const list = await booksApi.list();
         if (!mounted) return;
         setBooks(list);
-      } catch (err) {
-        console.error('Books refresh error:', err);
-        setError('Failed to load books');
+      } catch (err: any) {
+        if (!mounted) return;
+        console.error('Books fetch error:', err);
+        setError(err?.message || 'Failed to load books from database');
       } finally {
         setIsLoading(false);
       }

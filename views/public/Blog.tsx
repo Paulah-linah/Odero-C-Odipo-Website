@@ -68,9 +68,9 @@ export const Blog: React.FC = () => {
       
       setBlogPosts(data || []);
       setLastUpdated(Date.now());
-    } catch (err) {
+    } catch (err: any) {
       console.error('Public fetch error:', err);
-      setError('Unable to load blog posts at this time.');
+      setError(err?.message || 'Unable to load blog posts at this time.');
     } finally {
       setLoading(false);
     }
