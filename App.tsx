@@ -27,6 +27,7 @@ import { ManageBlog } from './views/admin/ManageBlog';
 import { ManageComments } from './views/admin/ManageComments';
 import { ManageComingSoon } from './views/admin/ManageComingSoon';
 import { ManageEvents } from './views/admin/ManageEvents';
+import { ManagePurchases } from './views/admin/ManagePurchases';
 import { Settings } from './views/admin/Settings';
 
 const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -146,6 +147,7 @@ const App: React.FC = () => {
         <Route path="/admin/blog" element={<AdminLayout><ManageBlog /></AdminLayout>} />
         <Route path="/admin/blog/new" element={<AdminLayout><ManageBlog /></AdminLayout>} />
         <Route path="/admin/comments" element={<AdminLayout><ManageComments /></AdminLayout>} />
+        <Route path="/admin/purchases" element={<AdminLayout><ManagePurchases /></AdminLayout>} />
         <Route path="/admin/coming-soon" element={<AdminLayout><ManageComingSoon /></AdminLayout>} />
         <Route path="/admin/events" element={<AdminLayout><ManageEvents /></AdminLayout>} />
         <Route path="/admin/settings" element={<AdminLayout><Settings /></AdminLayout>} />

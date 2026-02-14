@@ -26,6 +26,8 @@ export const ManagePurchases: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewerInfo, setViewerInfo] = useState<{ email?: string; role?: string } | null>(null);
 
   const getErrText = (err: unknown, fallback: string) => {
     if (typeof err === 'string') return err;
@@ -40,6 +42,27 @@ export const ManagePurchases: React.FC = () => {
 
   useEffect(() => {
     fetchPurchases();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        setViewerInfo(null);
+        return;
+      }
+
+      const session = data.session;
+      const email = session?.user?.email ?? undefined;
+      const role = (session?.user?.app_metadata as any)?.role ?? undefined;
+      setViewerInfo({ email, role });
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const fetchPurchases = async () => {
@@ -73,6 +96,22 @@ export const ManagePurchases: React.FC = () => {
       setError(getErrText(err, 'Failed to update status'));
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm('Delete this purchase record? This cannot be undone.');
+    if (!ok) return;
+
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from('purchases').delete().eq('id', id);
+      if (error) throw error;
+      await fetchPurchases();
+    } catch (err) {
+      setError(getErrText(err, 'Failed to delete purchase'));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -165,7 +204,21 @@ export const ManagePurchases: React.FC = () => {
       <div className="bg-white border border-black overflow-x-auto">
         {filteredPurchases.length === 0 ? (
           <div className="p-8 md:p-12 text-center text-gray-500">
-            No purchases found.
+            <div className="text-sm font-bold text-black mb-2">No purchases found.</div>
+            <div className="text-xs text-gray-500">
+              If you can see purchases in Supabase but not here, it’s usually because RLS policies are blocking reads.
+            </div>
+            {viewerInfo?.email && (
+              <div className="mt-4 text-xs text-gray-500">
+                Signed in as: <span className="font-bold text-black">{viewerInfo.email}</span>
+                {viewerInfo.role ? (
+                  <>
+                    {' '}
+                    (role: <span className="font-bold text-black">{viewerInfo.role}</span>)
+                  </>
+                ) : null}
+              </div>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-200 min-w-[700px]">
@@ -219,13 +272,22 @@ export const ManagePurchases: React.FC = () => {
                     <select
                       value={purchase.status}
                       onChange={(e) => handleStatusUpdate(purchase.id, e.target.value as Purchase['status'])}
-                      disabled={updatingId === purchase.id}
+                      disabled={updatingId === purchase.id || deletingId === purchase.id}
                       className="text-xs border border-black px-2 py-1 focus:outline-none focus:border-black disabled:opacity-50"
                     >
                       {statusOptions.map(status => (
                         <option key={status} value={status}>{status}</option>
                       ))}
                     </select>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(purchase.id)}
+                      disabled={deletingId === purchase.id || updatingId === purchase.id}
+                      className="text-[9px] uppercase font-bold tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50"
+                    >
+                      {deletingId === purchase.id ? 'Deleting...' : 'Delete'}
+                    </button>
                   </div>
                 </div>
               </div>
