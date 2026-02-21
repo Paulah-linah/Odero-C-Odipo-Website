@@ -159,14 +159,19 @@ export const booksApi = {
     formData.append('bookId', bookId);
     formData.append('pdf', file);
 
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-book-pdf`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: formData,
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-book-pdf`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: formData,
+      });
+    } catch (e: any) {
+      throw new Error('Could not reach upload-book-pdf function. Deploy the function in Supabase and check CORS/network settings.');
+    }
 
     const raw = await res.text();
     let body: any = null;

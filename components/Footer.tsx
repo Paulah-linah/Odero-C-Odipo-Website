@@ -15,6 +15,7 @@ export const Footer: React.FC = () => {
           <h4 className="font-bold uppercase text-xs tracking-widest mb-4">Quick Links</h4>
           <ul className="space-y-2 text-sm uppercase tracking-wide">
             <li><a href="/#/books" className="hover:underline">Books</a></li>
+            <li><a href="/#/recover" className="hover:underline">Access Your Books</a></li>
             <li><a href="/#/blog" className="hover:underline">Blog</a></li>
             <li><a href="/#/events" className="hover:underline">Events</a></li>
             <li><a href="/#/admin" className="hover:underline">Admin Login</a></li>

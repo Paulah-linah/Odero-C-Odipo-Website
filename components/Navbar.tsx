@@ -10,6 +10,7 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: 'Books', path: '/books' },
+    { name: 'Access Your Books', path: '/recover' },
     { name: 'Blog', path: '/blog' },
     { name: 'About', path: '/about' },
     { name: 'Events', path: '/events' },

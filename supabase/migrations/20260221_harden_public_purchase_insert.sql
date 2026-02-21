@@ -11,3 +11,6 @@ CREATE POLICY "Public can insert pending purchases only" ON purchases
     AND buyer_email IS NOT NULL
     AND char_length(trim(buyer_email)) > 0
   );
+
+
+

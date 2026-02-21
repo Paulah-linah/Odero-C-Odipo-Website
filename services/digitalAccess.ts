@@ -2,17 +2,22 @@ import { supabase } from './supabaseClient';
 
 export const digitalAccessApi = {
   getAccessToken: async (params: { reference: string; email: string }): Promise<{ token: string }> => {
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-access-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        reference: params.reference,
-        email: params.email,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-access-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          reference: params.reference,
+          email: params.email,
+        }),
+      });
+    } catch (_e: any) {
+      throw new Error('Could not reach get-access-token function. Deploy the function in Supabase and check CORS/network settings.');
+    }
 
     const raw = await res.text();
     let body: any = null;

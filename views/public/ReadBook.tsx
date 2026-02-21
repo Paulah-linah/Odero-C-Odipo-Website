@@ -1,9 +1,10 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { digitalAccessApi } from '../../services/digitalAccess';
 
 export const ReadBook: React.FC = () => {
   const { token } = useParams<{ token: string }>();
+  const location = useLocation();
 
   if (!token) {
     return (
@@ -16,7 +17,25 @@ export const ReadBook: React.FC = () => {
     );
   }
 
-  const src = digitalAccessApi.getReadUrl(token);
+  const params = new URLSearchParams(location.search);
+  const email = (params.get('email') || '').trim().toLowerCase();
+  const reference = (params.get('ref') || '').trim();
+
+  const maskEmail = (value: string) => {
+    if (!value.includes('@')) return value;
+    const [local, domain] = value.split('@');
+    const safeLocal = local.length <= 2 ? `${local[0] || ''}*` : `${local.slice(0, 2)}***`;
+    return `${safeLocal}@${domain}`;
+  };
+
+  const maskRef = (value: string) => {
+    if (value.length <= 10) return value;
+    return `${value.slice(0, 6)}...${value.slice(-4)}`;
+  };
+
+  const watermarkText = [maskEmail(email), maskRef(reference)].filter(Boolean).join(' | ');
+
+  const src = `${digitalAccessApi.getReadUrl(token)}#toolbar=0&navpanes=0&scrollbar=0`;
 
   return (
     <div className="min-h-[80vh]">
@@ -28,13 +47,18 @@ export const ReadBook: React.FC = () => {
           </Link>
         </div>
 
-        <div className="bg-white border border-black overflow-hidden" style={{ height: '75vh' }}>
+        <div className="relative bg-white border border-black overflow-hidden" style={{ height: '75vh' }}>
           <iframe
             title="Book Reader"
             src={src}
             className="w-full h-full"
             referrerPolicy="no-referrer"
           />
+          {watermarkText && (
+            <div className="pointer-events-none absolute right-3 bottom-3 bg-white/65 border border-black/20 px-2 py-1 text-[9px] uppercase tracking-wider text-black/70">
+              {watermarkText}
+            </div>
+          )}
         </div>
 
         <p className="mt-4 text-[11px] text-gray-500">

@@ -42,6 +42,14 @@ export const Books: React.FC = () => {
       <p className="text-gray-500 mb-16 max-w-xl">
         Explore the complete bibliography of Odipo C. Odero. From published memoirs to experimental anthologies.
       </p>
+      <div className="mb-12">
+        <Link
+          to="/recover"
+          className="inline-block border border-black px-5 py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-black hover:text-white transition-colors"
+        >
+          Access Your Books
+        </Link>
+      </div>
 
       {error && (
         <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>

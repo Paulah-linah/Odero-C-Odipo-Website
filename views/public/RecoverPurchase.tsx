@@ -15,11 +15,17 @@ export const RecoverPurchase: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      const normalizedReference = reference.trim();
+      const normalizedEmail = email.trim().toLowerCase();
       const { token } = await digitalAccessApi.getAccessToken({
-        reference: reference.trim(),
-        email: email.trim(),
+        reference: normalizedReference,
+        email: normalizedEmail,
       });
-      navigate(`/read/${token}`);
+      const params = new URLSearchParams({
+        ref: normalizedReference,
+        email: normalizedEmail,
+      });
+      navigate(`/read/${token}?${params.toString()}`);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to recover purchase');
     } finally {
