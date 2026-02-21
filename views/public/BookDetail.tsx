@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Book } from '../../types';
 import { booksApi } from '../../services/books';
 import { storage } from '../../services/storage';
@@ -8,6 +8,7 @@ import { startPaystackCheckout } from '../../services/paystack';
 
 export const BookDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [book, setBook] = useState<Book | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showMpesa, setShowMpesa] = useState(false);
@@ -101,7 +102,7 @@ export const BookDetail: React.FC = () => {
     setError('');
     try {
       const reference = `book_${book.id}_${Date.now()}`;
-      const channels = paymentMethod === 'mpesa' ? ['mobile_money'] : ['card'];
+      const channels: Array<'card' | 'mobile_money'> = paymentMethod === 'mpesa' ? ['mobile_money'] : ['card'];
 
       const resp = await startPaystackCheckout({
         email: buyerEmail.trim(),
@@ -132,7 +133,7 @@ export const BookDetail: React.FC = () => {
           quantity,
           unit_price: book.price,
           total_amount: totalAmount,
-          status: 'paid',
+          status: 'pending',
           payment_method: paymentMethod,
           payment_reference: paidRef,
         });
@@ -378,8 +379,20 @@ export const BookDetail: React.FC = () => {
             </div>
             <h2 className="text-3xl font-serif font-bold mb-4">Thank You!</h2>
             <p className="text-gray-600 mb-8">
-              Your purchase for <span className="font-bold">{book.title}</span> has been recorded. Please complete payment via M-Pesa.
+              Payment for <span className="font-bold">{book.title}</span> was received. Use your reference and email to open the reader.
             </p>
+            {paymentReference && (
+              <p className="text-xs text-gray-600 mb-6">
+                Reference: <span className="font-bold text-black">{paymentReference}</span>
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/recover')}
+              className="w-full border border-black py-3 uppercase text-xs font-bold tracking-widest mb-3"
+            >
+              Open Reader
+            </button>
             <button
               type="button"
               onClick={() => setShowSuccess(false)}

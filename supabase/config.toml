@@ -3,3 +3,15 @@ verify_jwt = false
 
 [functions.create-book]
 verify_jwt = false
+
+[functions.paystack-webhook]
+verify_jwt = false
+
+[functions.get-access-token]
+verify_jwt = false
+
+[functions.read-book]
+verify_jwt = false
+
+[functions.upload-book-pdf]
+verify_jwt = false

@@ -70,6 +70,31 @@ export const EditBook: React.FC = () => {
     }
   };
 
+  const handlePdfUpload: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !book) return;
+
+    setError('');
+    try {
+      await booksApi.uploadPdf(book.id, file);
+
+      const refreshed = await booksApi.getById(book.id);
+      setBook(refreshed);
+    } catch (err: any) {
+      if (err && typeof err === 'object') {
+        const msg = typeof err.message === 'string' ? err.message : 'Failed to upload PDF';
+        const details = typeof err.details === 'string' ? `\n${err.details}` : '';
+        const hint = typeof err.hint === 'string' ? `\n${err.hint}` : '';
+        const code = typeof err.code === 'string' ? `\ncode: ${err.code}` : '';
+        setError(`${msg}${code}${details}${hint}`);
+      } else {
+        setError('Failed to upload PDF');
+      }
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   const handleSave = async () => {
     if (!book) return;
 
@@ -159,6 +184,23 @@ export const EditBook: React.FC = () => {
               </div>
               <p className="text-[11px] text-gray-500 mt-3">
                 Uploads are saved to the server and will be visible on the live site.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Book PDF</label>
+            <div className="border border-black p-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handlePdfUpload}
+                  className="block w-full text-sm file:border file:border-black file:bg-white file:px-4 file:py-2 file:uppercase file:text-[10px] file:font-bold file:tracking-widest file:text-black"
+                />
+              </div>
+              <p className="text-[11px] text-gray-500 mt-3">
+                Upload the PDF content for this book. Buyers will only be able to view it after payment confirmation.
               </p>
             </div>
           </div>

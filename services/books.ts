@@ -135,4 +135,56 @@ export const booksApi = {
 
     return { cover_path: body.cover_path, cover_url: body.cover_url };
   }
+  ,
+
+  uploadPdf: async (bookId: string, file: File): Promise<{ pdf_path: string } > => {
+    if (file.type !== 'application/pdf') {
+      throw new Error('Unsupported file type. Please upload a PDF.');
+    }
+
+    const maxBytes = 50 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      throw new Error('File too large. Max size is 50MB.');
+    }
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError) throw sessionError;
+    if (!session) throw new Error('You must be logged in to upload a PDF.');
+
+    const formData = new FormData();
+    formData.append('bookId', bookId);
+    formData.append('pdf', file);
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-book-pdf`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: formData,
+    });
+
+    const raw = await res.text();
+    let body: any = null;
+    try {
+      body = raw ? JSON.parse(raw) : null;
+    } catch {
+      body = null;
+    }
+
+    if (!res.ok) {
+      const msg = body?.error || raw || `PDF upload failed (status ${res.status})`;
+      throw new Error(msg);
+    }
+
+    if (!body?.pdf_path) {
+      throw new Error('PDF upload succeeded but response was missing pdf_path');
+    }
+
+    return { pdf_path: body.pdf_path };
+  }
 };

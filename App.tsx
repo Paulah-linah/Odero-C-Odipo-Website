@@ -15,6 +15,8 @@ import { Blog } from './views/public/Blog';
 import { BlogPostDetail } from './views/public/BlogPostDetail';
 import { Events } from './views/public/Events';
 import { Maintenance } from './views/public/Maintenance';
+import { RecoverPurchase } from './views/public/RecoverPurchase';
+import { ReadBook } from './views/public/ReadBook';
 
 // Admin Views
 import { AdminLogin } from './views/admin/AdminLogin';
@@ -137,6 +139,8 @@ const App: React.FC = () => {
         <Route path="/about" element={shouldShowMaintenance ? <MaintenanceLayout /> : <PublicLayout><About /></PublicLayout>} />
         <Route path="/events" element={shouldShowMaintenance ? <MaintenanceLayout /> : <PublicLayout><Events /></PublicLayout>} />
         <Route path="/contact" element={shouldShowMaintenance ? <MaintenanceLayout /> : <PublicLayout><Contact /></PublicLayout>} />
+        <Route path="/recover" element={shouldShowMaintenance ? <MaintenanceLayout /> : <PublicLayout><RecoverPurchase /></PublicLayout>} />
+        <Route path="/read/:token" element={shouldShowMaintenance ? <MaintenanceLayout /> : <PublicLayout><ReadBook /></PublicLayout>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLogin />} />

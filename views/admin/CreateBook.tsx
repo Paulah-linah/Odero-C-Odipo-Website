@@ -13,6 +13,7 @@ export const CreateBook: React.FC = () => {
   const [publishedDate, setPublishedDate] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -34,6 +35,11 @@ export const CreateBook: React.FC = () => {
     } else {
       setCoverPreview(null);
     }
+  };
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setPdfFile(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +90,9 @@ export const CreateBook: React.FC = () => {
 
       const { cover_path, cover_url } = await booksApi.uploadCover(bookId, coverFile);
       await booksApi.update(bookId, { cover_path, cover_url });
+      if (pdfFile) {
+        await booksApi.uploadPdf(bookId, pdfFile);
+      }
 
       if (isFeatured) {
         const { error: clearError } = await supabase
@@ -154,6 +163,19 @@ export const CreateBook: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Book PDF (optional)</label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handlePdfChange}
+            className="block w-full text-sm file:border file:border-black file:bg-white file:px-4 file:py-2 file:uppercase file:text-[10px] file:font-bold file:tracking-widest file:text-black"
+          />
+          <p className="text-[11px] text-gray-500 mt-2">
+            Upload now or later from Edit Book. File must be PDF (max 50MB).
+          </p>
         </div>
 
         {/* Fields */}
