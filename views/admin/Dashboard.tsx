@@ -2,42 +2,94 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { storage } from '../../services/storage';
-import { Book, BlogPost, Event, Order } from '../../types';
+import { supabase } from '../../services/supabaseClient';
+
+type RecentPurchase = {
+  id: string;
+  buyer_email: string | null;
+  buyer_phone: string;
+  total_amount: number;
+  created_at: string;
+};
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState({
     books: 0,
     blogs: 0,
     events: 0,
-    orders: 0
+    sales: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [recentPurchases, setRecentPurchases] = useState<RecentPurchase[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const books = storage.getBooks();
-    const blogs = storage.getBlogs();
-    const events = storage.getEvents();
-    const orders = storage.getOrders();
+    let mounted = true;
 
-    setStats({
-      books: books.length,
-      blogs: blogs.length,
-      events: events.length,
-      orders: orders.length
-    });
-    setRecentOrders(orders.slice(-5).reverse());
+    const load = async () => {
+      setError('');
+      try {
+        const [
+          booksRes,
+          blogsRes,
+          purchasesRes,
+          recentRes,
+        ] = await Promise.all([
+          supabase.from('books').select('id', { count: 'exact', head: true }),
+          supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
+          supabase
+            .from('purchases')
+            .select('id,total_amount', { count: 'exact' })
+            .in('status', ['paid', 'completed']),
+          supabase
+            .from('purchases')
+            .select('id,buyer_email,buyer_phone,total_amount,created_at')
+            .in('status', ['paid', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ]);
+
+        if (booksRes.error) throw booksRes.error;
+        if (blogsRes.error) throw blogsRes.error;
+        if (purchasesRes.error) throw purchasesRes.error;
+        if (recentRes.error) throw recentRes.error;
+
+        const events = storage.getEvents();
+        const totalSales = (purchasesRes.data || []).reduce((sum, row: any) => sum + Number(row.total_amount || 0), 0);
+
+        if (!mounted) return;
+        setStats({
+          books: booksRes.count ?? 0,
+          blogs: blogsRes.count ?? 0,
+          events: events.length,
+          sales: totalSales,
+        });
+        setRecentPurchases((recentRes.data || []) as RecentPurchase[]);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load dashboard');
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const statCards = [
     { label: 'Total Books', value: stats.books, link: '/admin/books' },
     { label: 'Blog Posts', value: stats.blogs, link: '/admin/blog' },
     { label: 'Upcoming Events', value: stats.events, link: '/admin/events' },
-    { label: 'Simulated Sales', value: stats.orders, link: '#' },
+    { label: 'Total Sales (KES)', value: stats.sales.toLocaleString(), link: '/admin/purchases' },
   ];
 
   return (
     <div>
       <h1 className="text-3xl md:text-4xl font-serif font-bold mb-8">Admin Overview</h1>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>
+      )}
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8 md:mb-12">
@@ -64,16 +116,16 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white border border-gray-200 p-6 md:p-8 shadow-sm">
           <h2 className="text-2xl font-serif mb-6">Recent Activity</h2>
           <div className="space-y-4">
-            {recentOrders.length === 0 ? (
+            {recentPurchases.length === 0 ? (
               <p className="text-gray-400 text-sm italic">No recent transactions recorded.</p>
             ) : (
-              recentOrders.map(order => (
-                <div key={order.id} className="flex justify-between items-center text-sm border-b border-gray-100 pb-3">
+              recentPurchases.map((purchase) => (
+                <div key={purchase.id} className="flex justify-between items-center text-sm border-b border-gray-100 pb-3">
                   <div>
-                    <p className="font-bold">{order.customerName}</p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-tighter">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    <p className="font-bold">{purchase.buyer_email || purchase.buyer_phone}</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-tighter">{new Date(purchase.created_at).toLocaleDateString()}</p>
                   </div>
-                  <p className="font-serif font-bold">KES {order.amount.toLocaleString()}</p>
+                  <p className="font-serif font-bold">KES {Number(purchase.total_amount || 0).toLocaleString()}</p>
                 </div>
               ))
             )}
