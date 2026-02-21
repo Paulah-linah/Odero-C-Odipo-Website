@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { digitalAccessApi } from '../../services/digitalAccess';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -8,12 +8,14 @@ GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export const ReadBook: React.FC = () => {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [pages, setPages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRenderingMore, setIsRenderingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
   const [renderedCount, setRenderedCount] = useState(0);
   const [error, setError] = useState('');
+  const [zoom, setZoom] = useState<number>(() => (window.innerWidth < 768 ? 1.45 : 1));
   const renderScale = Math.min(3.8, Math.max(2.8, (window.devicePixelRatio || 1) * 2.2));
 
   if (!token) {
@@ -83,7 +85,30 @@ export const ReadBook: React.FC = () => {
         }
       } catch (e: any) {
         if (!cancelled) {
-          setError(e?.message ?? 'Failed to render book');
+          const message = e?.message ?? 'Failed to render book';
+
+          // If token is stale/revoked, auto-recover using saved purchase identity.
+          const canAutoRecover =
+            /invalid token|token revoked|unauthorized|expired/i.test(message);
+
+          if (canAutoRecover) {
+            try {
+              const raw = localStorage.getItem('odero_reader_identity');
+              const parsed = raw ? (JSON.parse(raw) as { ref?: string; email?: string }) : null;
+              const ref = String(parsed?.ref || '').trim();
+              const email = String(parsed?.email || '').trim().toLowerCase();
+
+              if (ref && email) {
+                const { token: freshToken } = await digitalAccessApi.getAccessToken({ reference: ref, email });
+                navigate(`/read/${freshToken}`, { replace: true });
+                return;
+              }
+            } catch {
+              // Fall through to user-visible error.
+            }
+          }
+
+          setError(message);
           setPages([]);
           setTotalPages(0);
           setRenderedCount(0);
@@ -98,16 +123,32 @@ export const ReadBook: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [token, renderScale]);
+  }, [token, renderScale, navigate]);
 
   return (
     <div className="min-h-[80vh]">
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-10">
         <div className="flex items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl md:text-3xl font-serif font-bold">Reader</h1>
-          <Link to="/recover" className="text-[10px] uppercase font-bold tracking-widest text-gray-600 hover:text-black">
-            Recover another purchase
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.max(1, Number((z - 0.15).toFixed(2))))}
+              className="border border-black px-2 py-1 text-[10px] uppercase tracking-widest font-bold"
+            >
+              A-
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.min(2.2, Number((z + 0.15).toFixed(2))))}
+              className="border border-black px-2 py-1 text-[10px] uppercase tracking-widest font-bold"
+            >
+              A+
+            </button>
+            <Link to="/recover" className="text-[10px] uppercase font-bold tracking-widest text-gray-600 hover:text-black ml-2">
+              Recover another purchase
+            </Link>
+          </div>
         </div>
 
         <div className="bg-white border border-black p-4 md:p-6">
@@ -131,12 +172,13 @@ export const ReadBook: React.FC = () => {
 
           <div className="space-y-4">
             {pages.map((src, idx) => (
-              <div key={`${idx}-${src.length}`} className="border border-gray-200 bg-gray-50">
+              <div key={`${idx}-${src.length}`} className="border border-gray-200 bg-gray-50 overflow-x-auto">
                 {src ? (
                   <img
                     src={src}
                     alt={`Page ${idx + 1}`}
-                    className="w-full h-auto block"
+                    className="h-auto block max-w-none"
+                    style={{ width: `${zoom * 100}%` }}
                     loading="lazy"
                     draggable={false}
                   />

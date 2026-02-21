@@ -35,7 +35,12 @@ export const RecoverPurchase: React.FC = () => {
       });
       navigate(`/read/${token}?${params.toString()}`);
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to recover purchase');
+      const msg = String(err?.message || '').toLowerCase();
+      if (msg.includes('failed to fetch') || msg.includes('could not reach get-access-token')) {
+        setError('We could not reach the book server. Please check your internet and try again in a few seconds.');
+      } else {
+        setError(err?.message ?? 'Failed to recover purchase');
+      }
     } finally {
       setIsSubmitting(false);
     }

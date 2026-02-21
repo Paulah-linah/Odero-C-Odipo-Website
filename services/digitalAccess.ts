@@ -47,27 +47,53 @@ export const digitalAccessApi = {
   },
 
   fetchBookPdf: async (token: string): Promise<ArrayBuffer> => {
-    const res = await fetch(digitalAccessApi.getReadUrl(token), {
-      method: 'GET',
-      headers: {
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      cache: 'no-store',
-    });
+    let attempt = 0;
+    let lastError: Error | null = null;
 
-    if (!res.ok) {
-      const raw = await res.text();
-      let body: any = null;
+    while (attempt < 2) {
+      attempt += 1;
       try {
-        body = raw ? JSON.parse(raw) : null;
-      } catch {
-        body = null;
+        const url = new URL(digitalAccessApi.getReadUrl(token));
+        url.searchParams.set('_ts', String(Date.now()));
+
+        const res = await fetch(url.toString(), {
+          method: 'GET',
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          const raw = await res.text();
+          let body: any = null;
+          try {
+            body = raw ? JSON.parse(raw) : null;
+          } catch {
+            body = null;
+          }
+          const msg = body?.error || raw || `Read request failed (status ${res.status})`;
+
+          // Retry once for transient server-side errors.
+          if (res.status >= 500 && attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            continue;
+          }
+
+          throw new Error(msg);
+        }
+
+        return await res.arrayBuffer();
+      } catch (e: any) {
+        lastError = e instanceof Error ? e : new Error(String(e));
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          continue;
+        }
       }
-      const msg = body?.error || raw || `Read request failed (status ${res.status})`;
-      throw new Error(msg);
     }
 
-    return await res.arrayBuffer();
+    throw lastError || new Error('Failed to load book');
   },
 };
 
