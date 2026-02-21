@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { PDFDocument, StandardFonts, rgb } from "npm:pdf-lib@1.17.1";
 
 const toHex = (bytes: Uint8Array) =>
   Array.from(bytes)
@@ -48,7 +49,7 @@ serve(async (req) => {
 
     const { data: access, error: aErr } = await supabase
       .from("purchase_access_tokens")
-      .select("id, book_id, revoked_at")
+      .select("id, purchase_id, book_id, email, revoked_at")
       .eq("token_hash", token_hash)
       .maybeSingle();
 
@@ -74,6 +75,23 @@ serve(async (req) => {
     }
 
     const bookId = String((access as any).book_id);
+    const purchaseId = String((access as any).purchase_id);
+    const accessEmail = String((access as any).email ?? "").trim().toLowerCase();
+
+    const { data: purchase, error: purchaseErr } = await supabase
+      .from("purchases")
+      .select("payment_reference")
+      .eq("id", purchaseId)
+      .maybeSingle();
+
+    if (purchaseErr) {
+      return new Response(JSON.stringify({ error: purchaseErr.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const paymentReference = String((purchase as any)?.payment_reference ?? "");
 
     const { data: book, error: bErr } = await supabase
       .from("books")
@@ -106,6 +124,42 @@ serve(async (req) => {
 
     const bytes = new Uint8Array(await file.arrayBuffer());
 
+    const watermarkEmail = accessEmail.includes("@")
+      ? (() => {
+          const [local, domain] = accessEmail.split("@");
+          const safeLocal = local.length <= 2 ? `${local[0] || ""}*` : `${local.slice(0, 2)}***`;
+          return `${safeLocal}@${domain}`;
+        })()
+      : accessEmail;
+
+    const watermarkRef =
+      paymentReference.length > 10
+        ? `${paymentReference.slice(0, 6)}...${paymentReference.slice(-4)}`
+        : paymentReference;
+
+    const watermarkText = [watermarkEmail, watermarkRef].filter(Boolean).join(" | ") || "Licensed Copy";
+
+    const pdfDoc = await PDFDocument.load(bytes);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const pages = pdfDoc.getPages();
+    const fontSize = 8;
+
+    for (const page of pages) {
+      const { width } = page.getSize();
+      const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+      const x = Math.max(12, (width - textWidth) / 2);
+      page.drawText(watermarkText, {
+        x,
+        y: 10,
+        size: fontSize,
+        font,
+        color: rgb(0.25, 0.25, 0.25),
+        opacity: 0.55,
+      });
+    }
+
+    const watermarked = await pdfDoc.save();
+
     void supabase
       .from("purchase_access_tokens")
       .update({
@@ -113,7 +167,7 @@ serve(async (req) => {
       })
       .eq("id", (access as any).id);
 
-    return new Response(bytes, {
+    return new Response(watermarked, {
       status: 200,
       headers: {
         ...corsHeaders,

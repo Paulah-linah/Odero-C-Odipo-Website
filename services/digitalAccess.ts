@@ -45,6 +45,30 @@ export const digitalAccessApi = {
     url.searchParams.set('token', token);
     return url.toString();
   },
+
+  fetchBookPdf: async (token: string): Promise<ArrayBuffer> => {
+    const res = await fetch(digitalAccessApi.getReadUrl(token), {
+      method: 'GET',
+      headers: {
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const raw = await res.text();
+      let body: any = null;
+      try {
+        body = raw ? JSON.parse(raw) : null;
+      } catch {
+        body = null;
+      }
+      const msg = body?.error || raw || `Read request failed (status ${res.status})`;
+      throw new Error(msg);
+    }
+
+    return await res.arrayBuffer();
+  },
 };
 
 void supabase;

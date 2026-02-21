@@ -21,6 +21,14 @@ export const RecoverPurchase: React.FC = () => {
         reference: normalizedReference,
         email: normalizedEmail,
       });
+      localStorage.setItem(
+        'odero_reader_identity',
+        JSON.stringify({
+          ref: normalizedReference,
+          email: normalizedEmail,
+          savedAt: new Date().toISOString(),
+        })
+      );
       const params = new URLSearchParams({
         ref: normalizedReference,
         email: normalizedEmail,

@@ -1,10 +1,20 @@
-import React from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { digitalAccessApi } from '../../services/digitalAccess';
+import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export const ReadBook: React.FC = () => {
   const { token } = useParams<{ token: string }>();
-  const location = useLocation();
+  const [pages, setPages] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRenderingMore, setIsRenderingMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
+  const [renderedCount, setRenderedCount] = useState(0);
+  const [error, setError] = useState('');
+  const renderScale = Math.min(3.8, Math.max(2.8, (window.devicePixelRatio || 1) * 2.2));
 
   if (!token) {
     return (
@@ -17,25 +27,78 @@ export const ReadBook: React.FC = () => {
     );
   }
 
-  const params = new URLSearchParams(location.search);
-  const email = (params.get('email') || '').trim().toLowerCase();
-  const reference = (params.get('ref') || '').trim();
+  useEffect(() => {
+    let cancelled = false;
 
-  const maskEmail = (value: string) => {
-    if (!value.includes('@')) return value;
-    const [local, domain] = value.split('@');
-    const safeLocal = local.length <= 2 ? `${local[0] || ''}*` : `${local.slice(0, 2)}***`;
-    return `${safeLocal}@${domain}`;
-  };
+    const loadPages = async () => {
+      if (!token) return;
+      setIsLoading(true);
+      setIsRenderingMore(false);
+      setError('');
+      setPages([]);
+      setTotalPages(0);
+      setRenderedCount(0);
+      try {
+        const buffer = await digitalAccessApi.fetchBookPdf(token);
+        const pdf = await getDocument({ data: buffer }).promise;
+        if (cancelled) return;
 
-  const maskRef = (value: string) => {
-    if (value.length <= 10) return value;
-    return `${value.slice(0, 6)}...${value.slice(-4)}`;
-  };
+        setTotalPages(pdf.numPages);
+        setPages(new Array(pdf.numPages).fill(''));
 
-  const watermarkText = [maskEmail(email), maskRef(reference)].filter(Boolean).join(' | ');
+        const renderPage = async (n: number) => {
+          const page = await pdf.getPage(n);
+          const viewport = page.getViewport({ scale: renderScale });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Canvas not supported');
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          await page.render({ canvasContext: context, viewport }).promise;
+          const dataUrl = canvas.toDataURL('image/png');
 
-  const src = `${digitalAccessApi.getReadUrl(token)}#toolbar=0&navpanes=0&scrollbar=0`;
+          if (!cancelled) {
+            setPages((prev) => {
+              const next = [...prev];
+              next[n - 1] = dataUrl;
+              return next;
+            });
+            setRenderedCount((prev) => prev + 1);
+          }
+        };
+
+        // Fast first paint: render page 1 immediately.
+        await renderPage(1);
+        if (cancelled) return;
+        setIsLoading(false);
+
+        // Render remaining pages progressively in background.
+        if (pdf.numPages > 1) {
+          setIsRenderingMore(true);
+          for (let n = 2; n <= pdf.numPages; n++) {
+            await renderPage(n);
+            if (cancelled) return;
+          }
+          if (!cancelled) setIsRenderingMore(false);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message ?? 'Failed to render book');
+          setPages([]);
+          setTotalPages(0);
+          setRenderedCount(0);
+          setIsRenderingMore(false);
+        }
+      } finally {
+        if (!cancelled && pages.length === 0) setIsLoading(false);
+      }
+    };
+
+    loadPages();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, renderScale]);
 
   return (
     <div className="min-h-[80vh]">
@@ -47,22 +110,46 @@ export const ReadBook: React.FC = () => {
           </Link>
         </div>
 
-        <div className="relative bg-white border border-black overflow-hidden" style={{ height: '75vh' }}>
-          <iframe
-            title="Book Reader"
-            src={src}
-            className="w-full h-full"
-            referrerPolicy="no-referrer"
-          />
-          {watermarkText && (
-            <div className="pointer-events-none absolute right-3 bottom-3 bg-white/65 border border-black/20 px-2 py-1 text-[9px] uppercase tracking-wider text-black/70">
-              {watermarkText}
+        <div className="bg-white border border-black p-4 md:p-6">
+          {isLoading && renderedCount === 0 && (
+            <div className="py-20 text-center text-sm text-gray-600">Loading pages...</div>
+          )}
+
+          {isRenderingMore && renderedCount > 0 && (
+            <div className="mb-4 text-[11px] text-gray-500">
+              Rendering pages: {renderedCount}/{totalPages}
             </div>
           )}
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 text-xs font-bold">{error}</div>
+          )}
+
+          {!isLoading && !error && pages.length === 0 && (
+            <div className="py-20 text-center text-sm text-gray-600">No pages to display.</div>
+          )}
+
+          <div className="space-y-4">
+            {pages.map((src, idx) => (
+              <div key={`${idx}-${src.length}`} className="border border-gray-200 bg-gray-50">
+                {src ? (
+                  <img
+                    src={src}
+                    alt={`Page ${idx + 1}`}
+                    className="w-full h-auto block"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="h-48 md:h-72 animate-pulse bg-gray-100" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <p className="mt-4 text-[11px] text-gray-500">
-          Viewing is for personal use only. Sharing or redistribution is prohibited.
+          Viewing is for personal use only. This reader is image-tile based and watermarked.
         </p>
       </div>
     </div>
