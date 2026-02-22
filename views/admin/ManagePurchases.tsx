@@ -27,6 +27,7 @@ export const ManagePurchases: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [viewerInfo, setViewerInfo] = useState<{ email?: string; role?: string } | null>(null);
 
   const getErrText = (err: unknown, fallback: string) => {
@@ -127,6 +128,68 @@ export const ManagePurchases: React.FC = () => {
   const formatKes = (amount: number) => `KES ${amount.toLocaleString()}`;
   const formatDate = (iso: string) => new Date(iso).toLocaleString();
 
+  const exportCsv = () => {
+    if (filteredPurchases.length === 0) return;
+    setIsExporting(true);
+    try {
+      const headers = [
+        'id',
+        'book_id',
+        'book_title',
+        'buyer_email',
+        'buyer_phone',
+        'quantity',
+        'unit_price',
+        'total_amount',
+        'status',
+        'payment_method',
+        'payment_reference',
+        'created_at',
+        'updated_at',
+      ];
+
+      const escape = (value: unknown) => {
+        const raw = String(value ?? '');
+        return `"${raw.replace(/"/g, '""')}"`;
+      };
+
+      const lines = [
+        headers.join(','),
+        ...filteredPurchases.map((p) =>
+          [
+            p.id,
+            p.book_id,
+            p.book_title,
+            p.buyer_email ?? '',
+            p.buyer_phone,
+            p.quantity,
+            p.unit_price,
+            p.total_amount,
+            p.status,
+            p.payment_method ?? '',
+            p.payment_reference ?? '',
+            p.created_at,
+            p.updated_at,
+          ]
+            .map(escape)
+            .join(',')
+        ),
+      ];
+
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `purchases_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -162,12 +225,21 @@ export const ManagePurchases: React.FC = () => {
     <div className="p-4 md:p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <h2 className="text-xl md:text-2xl font-serif font-bold">Manage Purchases</h2>
-        <button
-          onClick={fetchPurchases}
-          className="bg-black text-white px-4 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors w-full sm:w-auto"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={fetchPurchases}
+            className="bg-black text-white px-4 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors w-full sm:w-auto"
+          >
+            Refresh
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={isExporting || filteredPurchases.length === 0}
+            className="border border-black px-4 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-100 transition-colors disabled:opacity-60 w-full sm:w-auto"
+          >
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+        </div>
       </div>
 
       {error && (

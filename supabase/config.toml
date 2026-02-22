@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.upload-book-pdf]
 verify_jwt = false
+
+[functions.subscribe-newsletter]
+verify_jwt = false
