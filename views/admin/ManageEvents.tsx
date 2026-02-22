@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { storage } from '../../services/storage';
 import type { Event } from '../../types';
+import { newsletterApi } from '../../services/newsletter';
 
 const emptyForm: Omit<Event, 'id'> = {
   title: '',
@@ -70,11 +71,31 @@ export const ManageEvents: React.FC = () => {
   const handleToggleVisible = (id: string) => {
     const next = events.map(e => (e.id === id ? { ...e, isVisible: !e.isVisible } : e));
     saveAll(next);
+    const changed = next.find(e => e.id === id);
+    if (changed && changed.isVisible && !changed.isPast) {
+      void newsletterApi.notifyUpdate({
+        type: 'event',
+        title: changed.title,
+        summary: changed.description.slice(0, 180),
+        linkPath: '/events',
+        dedupeKey: `event:${changed.id}:published`,
+      }).catch(() => {});
+    }
   };
 
   const handleTogglePast = (id: string) => {
     const next = events.map(e => (e.id === id ? { ...e, isPast: !e.isPast } : e));
     saveAll(next);
+    const changed = next.find(e => e.id === id);
+    if (changed && changed.isVisible && !changed.isPast) {
+      void newsletterApi.notifyUpdate({
+        type: 'event',
+        title: changed.title,
+        summary: changed.description.slice(0, 180),
+        linkPath: '/events',
+        dedupeKey: `event:${changed.id}:published`,
+      }).catch(() => {});
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,6 +110,16 @@ export const ManageEvents: React.FC = () => {
     if (editingId) {
       const next = events.map(ev => (ev.id === editingId ? { ...ev, ...form } : ev));
       saveAll(next);
+      const changed = next.find(ev => ev.id === editingId);
+      if (changed && changed.isVisible && !changed.isPast) {
+        void newsletterApi.notifyUpdate({
+          type: 'event',
+          title: changed.title,
+          summary: changed.description.slice(0, 180),
+          linkPath: '/events',
+          dedupeKey: `event:${changed.id}:published`,
+        }).catch(() => {});
+      }
       closeModal();
       return;
     }
@@ -99,6 +130,15 @@ export const ManageEvents: React.FC = () => {
     };
 
     saveAll([newEvent, ...events]);
+    if (newEvent.isVisible && !newEvent.isPast) {
+      void newsletterApi.notifyUpdate({
+        type: 'event',
+        title: newEvent.title,
+        summary: newEvent.description.slice(0, 180),
+        linkPath: '/events',
+        dedupeKey: `event:${newEvent.id}:published`,
+      }).catch(() => {});
+    }
     closeModal();
   };
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookStatus } from '../../types';
 import { supabase } from '../../services/supabaseClient';
 import { booksApi } from '../../services/books';
+import { newsletterApi } from '../../services/newsletter';
 
 export const CreateBook: React.FC = () => {
   const navigate = useNavigate();
@@ -102,6 +103,20 @@ export const CreateBook: React.FC = () => {
         if (clearError) {
           setError(clearError.message);
           return;
+        }
+      }
+
+      if (status !== BookStatus.DRAFT && status !== BookStatus.COMING_SOON) {
+        try {
+          await newsletterApi.notifyUpdate({
+            type: 'book',
+            title,
+            summary: synopsis.slice(0, 180),
+            linkPath: `/books/${slug}`,
+            dedupeKey: `book:${bookId}:published`,
+          });
+        } catch {
+          // Keep book creation successful even if email sending fails.
         }
       }
 

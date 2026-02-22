@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
+import { newsletterApi } from '../../services/newsletter';
 
 interface BlogPost {
   id: string;
@@ -85,12 +86,28 @@ export const ManageBlog: React.FC = () => {
 
   const handleToggleStatus = async (post: BlogPost) => {
     try {
+      const nextStatus = post.status === 'published' ? 'draft' : 'published';
       const { error } = await supabase
         .from('blog_posts')
-        .update({ status: post.status === 'published' ? 'draft' : 'published' })
+        .update({ status: nextStatus })
         .eq('id', post.id);
 
       if (error) throw error;
+
+      if (nextStatus === 'published') {
+        try {
+          await newsletterApi.notifyUpdate({
+            type: 'blog',
+            title: post.title,
+            summary: post.excerpt.slice(0, 180),
+            linkPath: `/blog/${post.id}`,
+            dedupeKey: `blog:${post.id}:published`,
+          });
+        } catch {
+          // Keep publish successful even if notification fails.
+        }
+      }
+
       await fetchBlogPosts();
     } catch (err) {
       setError(getErrText(err, 'Failed to update blog post status'));
@@ -376,11 +393,26 @@ const EditBlogPost: React.FC<{
       }
       
       if (isCreating) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('blog_posts')
-          .insert(basePayload);
+          .insert(basePayload)
+          .select('id,title,excerpt,status')
+          .single();
 
         if (error) throw error;
+        if ((data as any)?.status === 'published') {
+          try {
+            await newsletterApi.notifyUpdate({
+              type: 'blog',
+              title: String((data as any).title ?? formData.title),
+              summary: String((data as any).excerpt ?? formData.excerpt).slice(0, 180),
+              linkPath: `/blog/${String((data as any).id ?? '')}`,
+              dedupeKey: `blog:${String((data as any).id ?? '')}:published`,
+            });
+          } catch {
+            // Keep create successful even if notification fails.
+          }
+        }
         console.log('Blog post created successfully');
       } else if (isEditing && post) {
         const { error } = await supabase
@@ -392,6 +424,19 @@ const EditBlogPost: React.FC<{
           .eq('id', post.id);
 
         if (error) throw error;
+        if (formData.status === 'published') {
+          try {
+            await newsletterApi.notifyUpdate({
+              type: 'blog',
+              title: formData.title,
+              summary: formData.excerpt.slice(0, 180),
+              linkPath: `/blog/${post.id}`,
+              dedupeKey: `blog:${post.id}:published`,
+            });
+          } catch {
+            // Keep update successful even if notification fails.
+          }
+        }
         console.log('Blog post updated successfully');
       }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Book, BookStatus } from '../../types';
 import { booksApi } from '../../services/books';
+import { newsletterApi } from '../../services/newsletter';
 
 export const EditBook: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -110,6 +111,20 @@ export const EditBook: React.FC = () => {
         published_date: book.publishedDate ? book.publishedDate : null,
         is_featured: Boolean(book.isFeatured)
       });
+
+      if (book.status !== BookStatus.DRAFT && book.status !== BookStatus.COMING_SOON) {
+        try {
+          await newsletterApi.notifyUpdate({
+            type: 'book',
+            title: book.title,
+            summary: book.synopsis.slice(0, 180),
+            linkPath: `/books/${book.slug}`,
+            dedupeKey: `book:${book.id}:published`,
+          });
+        } catch {
+          // Keep book save successful even if notification fails.
+        }
+      }
 
       navigate('/admin/books');
     } catch (e: any) {
