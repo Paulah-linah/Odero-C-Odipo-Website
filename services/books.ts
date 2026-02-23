@@ -10,6 +10,8 @@ export type BookRow = {
   status: string;
   cover_path: string | null;
   cover_url: string | null;
+  pdf_path?: string | null;
+  pdf_updated_at?: string | null;
   published_date: string | null;
   is_featured: boolean;
   created_at: string;
@@ -24,6 +26,8 @@ const toBook = (row: BookRow): Book => ({
   price: row.price_kes,
   status: row.status as any,
   coverImage: row.cover_url ?? '',
+  pdfPath: row.pdf_path ?? null,
+  pdfUpdatedAt: row.pdf_updated_at ?? null,
   publishedDate: row.published_date ?? '',
   isFeatured: row.is_featured
 });

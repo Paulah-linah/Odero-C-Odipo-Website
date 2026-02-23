@@ -101,8 +101,7 @@ export const CreateBook: React.FC = () => {
           .update({ is_featured: false })
           .neq('id', bookId);
         if (clearError) {
-          setError(clearError.message);
-          return;
+          setError(`Book saved, but failed to clear other featured books: ${clearError.message}`);
         }
       }
 
@@ -120,7 +119,7 @@ export const CreateBook: React.FC = () => {
         }
       }
 
-      navigate('/admin/books');
+      navigate(`/admin/books/edit/${bookId}`);
     } catch (err: any) {
       if (err && typeof err === 'object') {
         const msg = typeof err.message === 'string' ? err.message : 'Something went wrong.';

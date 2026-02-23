@@ -16,6 +16,8 @@ export interface Book {
   coverImage: string;
   publishedDate: string;
   isFeatured?: boolean;
+  pdfPath?: string | null;
+  pdfUpdatedAt?: string | null;
 }
 
 export interface BlogPost {

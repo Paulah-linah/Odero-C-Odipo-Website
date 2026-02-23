@@ -139,26 +139,32 @@ serve(async (req) => {
 
     const watermarkText = [watermarkEmail, watermarkRef].filter(Boolean).join(" | ") || "Licensed Copy";
 
-    const pdfDoc = await PDFDocument.load(bytes);
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const pages = pdfDoc.getPages();
-    const fontSize = 8;
+    let outputBytes: Uint8Array | ArrayBuffer = bytes;
+    try {
+      const pdfDoc = await PDFDocument.load(bytes);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
+      const fontSize = 8;
 
-    for (const page of pages) {
-      const { width } = page.getSize();
-      const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
-      const x = Math.max(12, (width - textWidth) / 2);
-      page.drawText(watermarkText, {
-        x,
-        y: 10,
-        size: fontSize,
-        font,
-        color: rgb(0.25, 0.25, 0.25),
-        opacity: 0.55,
-      });
+      for (const page of pages) {
+        const { width } = page.getSize();
+        const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+        const x = Math.max(12, (width - textWidth) / 2);
+        page.drawText(watermarkText, {
+          x,
+          y: 10,
+          size: fontSize,
+          font,
+          color: rgb(0.25, 0.25, 0.25),
+          opacity: 0.55,
+        });
+      }
+
+      outputBytes = await pdfDoc.save();
+    } catch (_watermarkErr) {
+      // Some PDFs can fail to re-serialize. Fall back to original bytes so reading still works.
+      outputBytes = bytes;
     }
-
-    const watermarked = await pdfDoc.save();
 
     void supabase
       .from("purchase_access_tokens")
@@ -167,7 +173,7 @@ serve(async (req) => {
       })
       .eq("id", (access as any).id);
 
-    return new Response(watermarked, {
+    return new Response(outputBytes, {
       status: 200,
       headers: {
         ...corsHeaders,

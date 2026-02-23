@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { digitalAccessApi } from '../../services/digitalAccess';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
@@ -16,7 +16,15 @@ export const ReadBook: React.FC = () => {
   const [renderedCount, setRenderedCount] = useState(0);
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState<number>(() => (window.innerWidth < 768 ? 1.45 : 1));
-  const renderScale = Math.min(3.8, Math.max(2.8, (window.devicePixelRatio || 1) * 2.2));
+  const renderScale = useMemo(() => {
+    const dpr = window.devicePixelRatio || 1;
+    if (window.innerWidth < 768) return Math.min(2.4, Math.max(1.8, dpr * 1.6));
+    return Math.min(2.8, Math.max(2.0, dpr * 1.8));
+  }, []);
+  const pdfRef = useRef<any | null>(null);
+  const renderingRef = useRef<Set<number>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   if (!token) {
     return (
@@ -45,44 +53,10 @@ export const ReadBook: React.FC = () => {
         const pdf = await getDocument({ data: buffer }).promise;
         if (cancelled) return;
 
+        pdfRef.current = pdf;
         setTotalPages(pdf.numPages);
         setPages(new Array(pdf.numPages).fill(''));
-
-        const renderPage = async (n: number) => {
-          const page = await pdf.getPage(n);
-          const viewport = page.getViewport({ scale: renderScale });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) throw new Error('Canvas not supported');
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          await page.render({ canvasContext: context, viewport }).promise;
-          const dataUrl = canvas.toDataURL('image/png');
-
-          if (!cancelled) {
-            setPages((prev) => {
-              const next = [...prev];
-              next[n - 1] = dataUrl;
-              return next;
-            });
-            setRenderedCount((prev) => prev + 1);
-          }
-        };
-
-        // Fast first paint: render page 1 immediately.
-        await renderPage(1);
-        if (cancelled) return;
         setIsLoading(false);
-
-        // Render remaining pages progressively in background.
-        if (pdf.numPages > 1) {
-          setIsRenderingMore(true);
-          for (let n = 2; n <= pdf.numPages; n++) {
-            await renderPage(n);
-            if (cancelled) return;
-          }
-          if (!cancelled) setIsRenderingMore(false);
-        }
       } catch (e: any) {
         if (!cancelled) {
           const message = e?.message ?? 'Failed to render book';
@@ -124,6 +98,62 @@ export const ReadBook: React.FC = () => {
       cancelled = true;
     };
   }, [token, renderScale, navigate]);
+
+  const renderPage = async (n: number) => {
+    if (!pdfRef.current) return;
+    if (renderingRef.current.has(n)) return;
+    renderingRef.current.add(n);
+    try {
+      const page = await pdfRef.current.getPage(n);
+      const viewport = page.getViewport({ scale: renderScale });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas not supported');
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      let dataUrl = '';
+      try {
+        dataUrl = canvas.toDataURL('image/webp', 0.85);
+      } catch {
+        dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      }
+
+      setPages((prev) => {
+        const next = [...prev];
+        next[n - 1] = dataUrl;
+        return next;
+      });
+      setRenderedCount((prev) => prev + 1);
+    } finally {
+      renderingRef.current.delete(n);
+    }
+  };
+
+  useEffect(() => {
+    if (!listRef.current || totalPages === 0) return;
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const idx = Number((entry.target as HTMLElement).dataset.index || '0');
+          if (idx > 0) {
+            void renderPage(idx);
+          }
+        }
+      },
+      { root: null, rootMargin: '800px 0px', threshold: 0.01 }
+    );
+
+    const nodes = listRef.current.querySelectorAll('[data-index]');
+    nodes.forEach((node) => observerRef.current?.observe(node));
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [totalPages]);
 
   return (
     <div className="min-h-[80vh]">
@@ -170,9 +200,9 @@ export const ReadBook: React.FC = () => {
             <div className="py-20 text-center text-sm text-gray-600">No pages to display.</div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-4" ref={listRef}>
             {pages.map((src, idx) => (
-              <div key={`${idx}-${src.length}`} className="border border-gray-200 bg-gray-50 overflow-x-auto">
+              <div key={`${idx}-${src.length}`} data-index={idx + 1} className="border border-gray-200 bg-gray-50 overflow-x-auto">
                 {src ? (
                   <img
                     src={src}

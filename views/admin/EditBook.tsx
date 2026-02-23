@@ -12,6 +12,9 @@ export const EditBook: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [selectedPdfName, setSelectedPdfName] = useState('');
+  const [selectedCoverName, setSelectedCoverName] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -27,11 +30,16 @@ export const EditBook: React.FC = () => {
       try {
         const found = await booksApi.getById(id);
         if (!mounted) return;
-        setBook(found);
+        if (found) {
+          setBook(found);
+        } else {
+          // Keep current form state if a transient read returns null.
+          setError('Could not refresh this book right now. Your current edits are still on screen.');
+        }
       } catch (e: any) {
         if (!mounted) return;
         setError(e?.message ?? 'Failed to load book');
-        setBook(null);
+        // Do not clear existing state on transient errors.
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -50,12 +58,14 @@ export const EditBook: React.FC = () => {
     if (!file || !book) return;
 
     setError('');
+    setSuccess('');
+    setSelectedCoverName(file.name);
     try {
       const { cover_path, cover_url } = await booksApi.uploadCover(book.id, file);
       await booksApi.update(book.id, { cover_path, cover_url });
-
-      const refreshed = await booksApi.getById(book.id);
-      setBook(refreshed);
+      // Keep editor stable: avoid dependency on immediate follow-up read.
+      setBook({ ...book, coverImage: cover_url });
+      setSuccess('Cover uploaded successfully.');
     } catch (err: any) {
       if (err && typeof err === 'object') {
         const msg = typeof err.message === 'string' ? err.message : 'Failed to upload cover';
@@ -76,11 +86,17 @@ export const EditBook: React.FC = () => {
     if (!file || !book) return;
 
     setError('');
+    setSuccess('');
+    setSelectedPdfName(file.name);
     try {
-      await booksApi.uploadPdf(book.id, file);
-
-      const refreshed = await booksApi.getById(book.id);
-      setBook(refreshed);
+      const { pdf_path } = await booksApi.uploadPdf(book.id, file);
+      // Keep editor stable when replacing PDFs.
+      setBook({
+        ...book,
+        pdfPath: pdf_path,
+        pdfUpdatedAt: new Date().toISOString(),
+      });
+      setSuccess('PDF uploaded successfully.');
     } catch (err: any) {
       if (err && typeof err === 'object') {
         const msg = typeof err.message === 'string' ? err.message : 'Failed to upload PDF';
@@ -126,6 +142,7 @@ export const EditBook: React.FC = () => {
         }
       }
 
+      setSuccess('Book saved successfully.');
       navigate('/admin/books');
     } catch (e: any) {
       setError(e?.message ?? 'Failed to save book');
@@ -162,6 +179,9 @@ export const EditBook: React.FC = () => {
     <div className="bg-white border border-black p-8">
       {error && (
         <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>
+      )}
+      {success && (
+        <div className="bg-green-50 text-green-700 p-3 text-xs mb-6 font-bold">{success}</div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
@@ -200,6 +220,11 @@ export const EditBook: React.FC = () => {
               <p className="text-[11px] text-gray-500 mt-3">
                 Uploads are saved to the server and will be visible on the live site.
               </p>
+              {selectedCoverName && (
+                <p className="text-[11px] text-gray-600 mt-2">
+                  Selected cover: {selectedCoverName}
+                </p>
+              )}
             </div>
           </div>
 
@@ -217,6 +242,16 @@ export const EditBook: React.FC = () => {
               <p className="text-[11px] text-gray-500 mt-3">
                 Upload the PDF content for this book. Buyers will only be able to view it after payment confirmation.
               </p>
+              <p className="text-[11px] text-gray-600 mt-2">
+                {book.pdfPath
+                  ? `Current PDF: uploaded ${book.pdfUpdatedAt ? new Date(book.pdfUpdatedAt).toLocaleString() : 'recently'}`
+                  : 'Current PDF: not uploaded yet'}
+              </p>
+              {selectedPdfName && (
+                <p className="text-[11px] text-gray-600 mt-1">
+                  Selected PDF: {selectedPdfName}
+                </p>
+              )}
             </div>
           </div>
 
