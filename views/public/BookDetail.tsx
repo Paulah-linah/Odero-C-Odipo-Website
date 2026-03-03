@@ -94,7 +94,7 @@ export const BookDetail: React.FC = () => {
       setError('Please enter your email address');
       return;
     }
-    if (!buyerPhone.trim()) {
+    if (paymentMethod === 'mpesa' && !buyerPhone.trim()) {
       setError('Please enter your phone number');
       return;
     }
@@ -104,6 +104,7 @@ export const BookDetail: React.FC = () => {
       const reference = `book_${book.id}_${Date.now()}`;
       const channels: Array<'card' | 'mobile_money'> = paymentMethod === 'mpesa' ? ['mobile_money'] : ['card'];
 
+      const normalizedBuyerPhone = paymentMethod === 'mpesa' ? buyerPhone.trim() : '';
       const resp = await startPaystackCheckout({
         email: buyerEmail.trim(),
         amountKes: totalAmount,
@@ -115,7 +116,7 @@ export const BookDetail: React.FC = () => {
           quantity,
           unit_price: book.price,
           total_amount: totalAmount,
-          buyer_phone: buyerPhone.trim(),
+          buyer_phone: normalizedBuyerPhone,
           payment_method: paymentMethod,
         },
       });
@@ -128,7 +129,7 @@ export const BookDetail: React.FC = () => {
         .insert({
           book_id: book.id,
           book_title: book.title,
-          buyer_phone: buyerPhone.trim(),
+          buyer_phone: normalizedBuyerPhone,
           buyer_email: buyerEmail.trim(),
           quantity,
           unit_price: book.price,
@@ -333,17 +334,19 @@ export const BookDetail: React.FC = () => {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Phone Number (M-Pesa)</label>
-                <input
-                  type="tel"
-                  placeholder="254712345678"
-                  value={buyerPhone}
-                  onChange={(e) => setBuyerPhone(e.target.value)}
-                  className="w-full border border-black p-3 focus:outline-none"
-                  required
-                />
-              </div>
+              {paymentMethod === 'mpesa' && (
+                <div>
+                  <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Phone Number (M-Pesa)</label>
+                  <input
+                    type="tel"
+                    placeholder="254712345678"
+                    value={buyerPhone}
+                    onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="w-full border border-black p-3 focus:outline-none"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {error && (
