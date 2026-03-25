@@ -1,0 +1,24 @@
+{
+  "name": "Odipo C. Odero | Author",
+  "short_name": "Odipo Odero",
+  "description": "Author portfolio and writings by Odipo C. Odero.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ee",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    {
+      "src": "/icons/odipo-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/odipo-icon-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
