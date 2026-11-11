@@ -122,16 +122,16 @@ export const BlogPostDetail: React.FC = () => {
         </header>
 
         {blogPost.image_url && (
-          <figure className="mb-12 overflow-hidden bg-mist">
+          <figure className="mx-auto mb-12 w-full max-w-sm overflow-hidden bg-mist shadow-[0_20px_40px_-24px_rgba(0,0,0,.45)] sm:max-w-md">
             <SmartImg
               src={blogPost.image_url}
-              sizes="(max-width: 768px) 100vw, 768px"
+              sizes="(max-width: 640px) 90vw, 448px"
               alt={blogPost.title}
               width={1200}
               height={900}
               decoding="async"
               {...({ fetchpriority: 'high' } as any)}
-              className="w-full object-cover grayscale"
+              className="block max-h-[28rem] w-full object-cover"
             />
           </figure>
         )}

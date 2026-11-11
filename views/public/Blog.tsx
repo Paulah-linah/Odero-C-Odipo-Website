@@ -113,7 +113,7 @@ export const Blog: React.FC = () => {
                         width={800}
                         height={800}
                         decoding="async"
-                        className="h-full w-full object-cover grayscale transition duration-700 ease-smooth group-hover:scale-[1.03] group-hover:grayscale-0 md:aspect-auto aspect-[4/3]"
+                        className="h-full w-full object-cover transition-transform duration-700 ease-smooth group-hover:scale-[1.03] md:aspect-auto aspect-[4/3]"
                       />
                     </Link>
                   )}
@@ -181,7 +181,7 @@ export const Blog: React.FC = () => {
                             height={600}
                             loading="lazy"
                             decoding="async"
-                            className="h-full w-full object-cover grayscale transition duration-700 ease-smooth group-hover:scale-[1.03] group-hover:grayscale-0"
+                            className="h-full w-full object-cover transition-transform duration-700 ease-smooth group-hover:scale-[1.03]"
                           />
                         </Link>
                       )}

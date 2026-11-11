@@ -152,7 +152,7 @@ export const Home: React.FC = () => {
               {comingSoon.map((book, i) => (
                 <Reveal key={book.id} delay={i * 70} className="w-40 sm:w-48">
                   <Link to={`/books/${book.slug}`} className="group block text-center">
-                    <BookCover src={book.coverImage} title={book.title} imgClassName="grayscale transition duration-500 group-hover:grayscale-0" />
+                    <BookCover src={book.coverImage} title={book.title} imgClassName="transition-transform duration-500 ease-smooth group-hover:scale-[1.03]" />
                     <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em]">{book.title}</p>
                   </Link>
                 </Reveal>
