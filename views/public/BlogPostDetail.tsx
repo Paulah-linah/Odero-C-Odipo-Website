@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { CommentSection } from '../../components/CommentSection';
 import { LikeButton } from '../../components/LikeButton';
+import { SmartImg } from '../../components/BookCover';
 
 interface BlogPost {
   id: string;
@@ -21,7 +22,6 @@ interface BlogPost {
 
 export const BlogPostDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +31,13 @@ export const BlogPostDetail: React.FC = () => {
       fetchBlogPost(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (blogPost) document.title = `${blogPost.title} | Odipo C. Odero`;
+    return () => {
+      document.title = 'Odipo C. Odero | Author';
+    };
+  }, [blogPost]);
 
   const fetchBlogPost = async (postId: string) => {
     try {
@@ -62,18 +69,14 @@ export const BlogPostDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="py-20 px-6 md:px-12 max-w-4xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded mb-4 w-32"></div>
-            <div className="h-12 bg-gray-200 rounded mb-4"></div>
-            <div className="h-6 bg-gray-200 rounded mb-8 w-48"></div>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-4 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
+      <div className="page max-w-3xl py-20" aria-busy="true">
+        <div className="skeleton mb-6 h-3 w-32" />
+        <div className="skeleton mb-4 h-12 w-full" />
+        <div className="skeleton mb-12 h-12 w-2/3" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton h-4 w-full" />
+          ))}
         </div>
       </div>
     );
@@ -81,126 +84,78 @@ export const BlogPostDetail: React.FC = () => {
 
   if (error || !blogPost) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="py-20 px-6 md:px-12 max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-serif font-bold mb-6 italic">Post Not Found</h1>
-          <p className="text-gray-600 mb-8">
-            {error || 'The blog post you are looking for does not exist or has been removed.'}
-          </p>
-          <button
-            onClick={() => navigate('/blog')}
-            className="bg-black text-white px-6 py-2 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors"
-          >
-            Back to Blog
-          </button>
-        </div>
+      <div className="page max-w-3xl py-32 text-center">
+        <p className="eyebrow mb-5 justify-center">Not found</p>
+        <h1 className="font-serif text-4xl font-bold">This post isn&rsquo;t available</h1>
+        <p className="mt-4 text-neutral-600">
+          {error || 'The blog post you are looking for does not exist or has been removed.'}
+        </p>
+        <Link to="/blog" className="btn-dark mt-10">Back to the blog</Link>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="py-6 px-6 md:px-12 max-w-4xl mx-auto">
-        <button
-          onClick={() => navigate('/blog')}
-          className="text-sm font-bold uppercase tracking-widest hover:text-black transition-colors flex items-center gap-2"
-        >
-          ← Back to Blog
-        </button>
-      </nav>
+  const published = new Date(blogPost.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      {/* Blog Post Content */}
-      <article className="py-8 px-6 md:px-12 max-w-4xl mx-auto">
-        {/* Header */}
+  return (
+    <div>
+      <article className="page max-w-3xl pb-16 pt-10 md:pt-14">
+        <nav aria-label="Breadcrumb" className="mb-12 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+          <Link to="/blog" className="transition-colors hover:text-ink">← The notebook</Link>
+        </nav>
+
         <header className="mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
-              <span className="bg-black text-white px-3 py-1 text-xs uppercase tracking-widest font-bold">
-                {blogPost.category}
-              </span>
-              <span className="text-sm text-gray-500">{blogPost.read_time}</span>
-            </div>
-            
-            <LikeButton blogPostId={blogPost.id} />
+          <div className="mb-6 flex flex-wrap items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
+            <span className="bg-ink px-3 py-1 text-white">{blogPost.category}</span>
+            {blogPost.featured && <span className="border border-ink px-3 py-1 text-ink">Featured</span>}
+            {blogPost.read_time && <span>{blogPost.read_time}</span>}
           </div>
-          
-          {blogPost.image_url && (
-            <div className="mb-8 max-w-lg mx-auto">
-              <div className="aspect-square w-full overflow-hidden rounded-lg">
-                <img 
-                  src={blogPost.image_url} 
-                  alt={blogPost.title} 
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-            </div>
-          )}
-          
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 italic leading-tight">
-            {blogPost.title}
-          </h1>
-          
-          <div className="flex items-center justify-between border-b border-gray-200 pb-6">
-            <p className="text-gray-600">
-              Published on {new Date(blogPost.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+
+          <h1 className="text-balance font-serif text-4xl font-bold leading-[1.1] md:text-6xl">{blogPost.title}</h1>
+
+          <div className="mt-8 flex items-center justify-between gap-4 border-b border-neutral-200 pb-8">
+            <p className="text-sm text-neutral-500">
+              By Odipo C. Odero &middot; {published}
             </p>
-            {blogPost.featured && (
-              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 text-xs uppercase tracking-widest font-bold">
-                Featured
-              </span>
-            )}
+            <LikeButton blogPostId={blogPost.id} />
           </div>
         </header>
 
-        {/* Excerpt */}
-        {blogPost.excerpt && (
-          <div className="mb-8">
-            <p className="text-xl text-gray-600 leading-relaxed italic border-l-4 border-gray-300 pl-6">
-              {blogPost.excerpt}
-            </p>
-          </div>
+        {blogPost.image_url && (
+          <figure className="mb-12 overflow-hidden bg-mist">
+            <SmartImg
+              src={blogPost.image_url}
+              sizes="(max-width: 768px) 100vw, 768px"
+              alt={blogPost.title}
+              width={1200}
+              height={900}
+              decoding="async"
+              {...({ fetchpriority: 'high' } as any)}
+              className="w-full object-cover grayscale"
+            />
+          </figure>
         )}
 
-        {/* Content */}
-        <div className="prose prose-lg max-w-none">
-          <div 
-            className="text-gray-800 leading-relaxed space-y-6"
-            dangerouslySetInnerHTML={{ __html: blogPost.content.replace(/\n/g, '<br />') }}
-          />
-        </div>
+        {blogPost.excerpt && (
+          <p className="mb-10 border-l-2 border-ink pl-6 font-serif text-2xl italic leading-relaxed text-neutral-700">
+            {blogPost.excerpt}
+          </p>
+        )}
 
-        {/* Tags/Metadata */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-500">Category:</span>
-            <span className="bg-gray-100 text-gray-700 px-3 py-1 text-sm rounded-full">
-              {blogPost.category}
-            </span>
-          </div>
-        </div>
+        <div
+          className="space-y-6 font-serif text-[1.2rem] leading-[1.85] text-neutral-800 [&_a]:underline [&_a]:underline-offset-4 [&_p]:mb-6"
+          dangerouslySetInnerHTML={{ __html: blogPost.content.replace(/\n/g, '<br />') }}
+        />
       </article>
 
-      {/* Comments Section */}
-      <section className="py-12 px-6 md:px-12 max-w-4xl mx-auto">
+      <section className="page max-w-3xl pb-20">
         <CommentSection blogPostId={blogPost.id} />
       </section>
 
-      {/* Related Posts Navigation */}
-      <section className="py-12 px-6 md:px-12 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">
-            <button
-              onClick={() => navigate('/blog')}
-              className="bg-black text-white px-8 py-3 text-sm uppercase tracking-widest font-bold hover:bg-gray-800 transition-colors"
-            >
-              Read More Articles
-            </button>
-          </div>
+      <section className="border-t border-neutral-200 bg-mist py-16">
+        <div className="page text-center">
+          <p className="mb-6 font-serif text-2xl italic">Keep reading</p>
+          <Link to="/blog" className="btn-dark">More from the notebook</Link>
         </div>
       </section>
     </div>

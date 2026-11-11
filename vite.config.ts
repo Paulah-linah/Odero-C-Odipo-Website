@@ -22,6 +22,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      build: {
+        target: 'es2020',
+        rollupOptions: {
+          output: {
+            // Framework code changes rarely, so it gets its own long-cached files.
+            manualChunks: {
+              react: ['react', 'react-dom', 'react-router-dom'],
+              supabase: ['@supabase/supabase-js'],
+            },
+          },
+        },
+      },
     };
 });

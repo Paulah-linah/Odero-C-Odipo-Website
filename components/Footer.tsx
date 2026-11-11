@@ -1,112 +1,49 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { NewsletterForm } from './NewsletterForm';
 
-import React, { useState } from 'react';
+const links = [
+  { name: 'Books', path: '/books' },
+  { name: 'Access your books', path: '/recover' },
+  { name: 'Blog', path: '/blog' },
+  { name: 'About', path: '/about' },
+  { name: 'Events', path: '/events' },
+  { name: 'Contact', path: '/contact' },
+];
 
-export const Footer: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ text: string; kind: 'success' | 'error' } | null>(null);
-
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-
-    const normalized = email.trim().toLowerCase();
-    if (!isValidEmail(normalized)) {
-      setMessage({ text: 'Enter a valid email address.', kind: 'error' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/subscribe-newsletter`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ email: normalized }),
-      });
-
-      const raw = await res.text();
-      let body: any = null;
-      try {
-        body = raw ? JSON.parse(raw) : null;
-      } catch {
-        body = null;
-      }
-
-      if (!res.ok) {
-        throw new Error(body?.error || raw || `Subscription failed (${res.status})`);
-      }
-
-      if (body?.duplicate) {
-        setMessage({ text: 'This email is already subscribed.', kind: 'success' });
-      } else {
-        setEmail('');
-        setMessage({ text: 'Subscribed successfully. Thank you.', kind: 'success' });
-      }
-    } catch (err: any) {
-      setMessage({ text: err?.message ?? 'Failed to subscribe. Try again.', kind: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <footer className="border-t border-black py-12 px-6 bg-white">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div>
-          <h3 className="text-4xl font-great-vibes">Odipo C. Odero</h3>
-          <p className="text-sm text-gray-600 max-w-xs leading-relaxed">
-            Exploring the silence between words. A Nairobi-based author dedicated to literary intimacy and storytelling.
-          </p>
-        </div>
-        <div>
-          <h4 className="font-bold uppercase text-xs tracking-widest mb-4">Quick Links</h4>
-          <ul className="space-y-2 text-sm uppercase tracking-wide">
-            <li><a href="/#/books" className="hover:underline">Books</a></li>
-            <li><a href="/#/recover" className="hover:underline">Access Your Books</a></li>
-            <li><a href="/#/blog" className="hover:underline">Blog</a></li>
-            <li><a href="/#/events" className="hover:underline">Events</a></li>
-            <li><a href="/#/admin" className="hover:underline">Admin Login</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold uppercase text-xs tracking-widest mb-4">Newsletter</h4>
-          <p className="text-sm mb-4">Subscribe for updates on new releases and events.</p>
-          <form onSubmit={handleSubscribe}>
-            <div className="flex">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="border border-black px-4 py-2 w-full focus:outline-none focus:ring-1 focus:ring-black"
-                required
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-black text-white px-6 py-2 uppercase text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-60"
-              >
-                {isSubmitting ? 'Joining...' : 'Join'}
-              </button>
-            </div>
-            {message && (
-              <p
-                className={`mt-2 text-xs font-bold ${message.kind === 'success' ? 'text-green-700' : 'text-red-600'}`}
-              >
-                {message.text}
-              </p>
-            )}
-          </form>
-        </div>
+export const Footer: React.FC = () => (
+  <footer className="bg-ink text-white">
+    <div className="page grid grid-cols-1 gap-14 py-20 md:grid-cols-12">
+      <div className="md:col-span-5">
+        <Link to="/" className="font-script text-5xl leading-none">Odipo C. Odero</Link>
+        <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/60">
+          Exploring the silence between words. A Nairobi-based author dedicated to literary intimacy and storytelling.
+        </p>
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-100 text-center text-[10px] uppercase tracking-widest text-gray-400">
-        &copy; {new Date().getFullYear()} Odipo C. Odero. Built from scratch with precision.
+
+      <div className="md:col-span-3">
+        <h3 className="mb-5 font-sans text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40">Explore</h3>
+        <ul className="space-y-3 text-sm">
+          {links.map((l) => (
+            <li key={l.path}>
+              <Link to={l.path} className="text-white/80 transition-colors hover:text-white">{l.name}</Link>
+            </li>
+          ))}
+        </ul>
       </div>
-    </footer>
-  );
-};
+
+      <div className="md:col-span-4">
+        <h3 className="mb-5 font-sans text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40">Newsletter</h3>
+        <p className="mb-5 text-sm leading-relaxed text-white/70">New releases, essays and events — straight to your inbox.</p>
+        <NewsletterForm variant="dark" />
+      </div>
+    </div>
+
+    <div className="border-t border-white/10">
+      <div className="page flex flex-col items-center justify-between gap-3 py-6 text-[11px] uppercase tracking-[0.2em] text-white/40 sm:flex-row">
+        <span>&copy; {new Date().getFullYear()} Odipo C. Odero</span>
+        <Link to="/admin" className="transition-colors hover:text-white">Admin</Link>
+      </div>
+    </div>
+  </footer>
+);

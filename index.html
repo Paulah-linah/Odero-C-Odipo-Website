@@ -1,66 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Odipo C. Odero | Author</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&family=Mrs+Saint+Delafield&family=Sacramento&family=Billy+Signature&family=Bostroom&family=Great+Vibes&display=swap" rel="stylesheet">
+    <meta name="description" content="Odipo C. Odero writes uncoloured stories — shaped by memory, love, loss, observation and the quiet things we feel. Discover his books, blog and events.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="canonical" href="https://odipocodero.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Odipo C. Odero">
+    <meta property="og:title" content="Odipo C. Odero | Author">
+    <meta property="og:description" content="Uncoloured stories — shaped by memory, love, loss, observation and the quiet things we feel.">
+    <meta property="og:url" content="https://odipocodero.com/">
+    <meta property="og:image" content="https://odipocodero.com/images/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="icon" href="/icons/odipo-icon.svg" type="image/svg+xml">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-        }
-        h1, h2, h3, h4, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-        .font-signature {
-            font-family: 'Mrs Saint Delafield', cursive;
-        }
-        .font-sacramento {
-            font-family: 'Sacramento', cursive;
-        }
-        .font-billy {
-            font-family: 'Billy Signature', cursive;
-        }
-        .font-bostroom {
-            font-family: 'Bostroom', cursive;
-        }
-        .font-great-vibes {
-            font-family: 'Great Vibes', cursive;
-        }
-        .stick-figure-filter {
-            filter: grayscale(100%) contrast(120%);
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #000;
-        }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+
+    <!-- Warm up connections the page needs right away -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin>
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fonts load without blocking the first paint -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap"></noscript>
 </head>
-<body class="antialiased overflow-x-hidden">
+<body>
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <noscript><p style="font-family:Georgia,serif;padding:48px 24px;text-align:center">Please enable JavaScript to view odipocodero.com.</p></noscript>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

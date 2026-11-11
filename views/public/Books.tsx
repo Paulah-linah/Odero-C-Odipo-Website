@@ -1,87 +1,93 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Book } from '../../types';
+import { Book, BookStatus } from '../../types';
 import { booksApi } from '../../services/books';
+import { BookCover } from '../../components/BookCover';
+import { Reveal } from '../../components/Reveal';
+
+const formatKes = (amount: number) => `KES ${amount.toLocaleString()}`;
 
 export const Books: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [books, setBooks] = useState<Book[] | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let mounted = true;
+  const load = () => {
+    setError('');
+    setBooks(null);
+    booksApi
+      .list()
+      .then(setBooks)
+      .catch((err: any) => {
+        setError(err?.message || 'Failed to load books.');
+        setBooks([]);
+      });
+  };
 
-    const refresh = async () => {
-      setError('');
-      setIsLoading(true);
-      console.log('Refreshing books...', 'Mobile:', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
-      
-      try {
-        const list = await booksApi.list();
-        if (!mounted) return;
-        setBooks(list);
-      } catch (err: any) {
-        if (!mounted) return;
-        console.error('Books fetch error:', err);
-        setError(err?.message || 'Failed to load books from database');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  useEffect(load, []);
 
-    refresh();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const visible = (books ?? []).filter((b) => b.status !== BookStatus.DRAFT);
 
   return (
-    <div className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
-      <h1 className="text-5xl font-serif font-bold mb-4">The Library</h1>
-      <p className="text-gray-500 mb-16 max-w-xl">
-        Explore the complete bibliography of Odipo C. Odero. From published memoirs to experimental anthologies.
-      </p>
-      <div className="mb-12">
-        <Link
-          to="/recover"
-          className="inline-block border border-black px-5 py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-black hover:text-white transition-colors"
-        >
-          Access Your Books
-        </Link>
-      </div>
+    <div className="page pb-28 pt-14 md:pt-20">
+      <header className="mb-16 flex flex-col gap-8 border-b border-neutral-200 pb-12 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="eyebrow mb-5">The library</p>
+          <h1 className="font-serif text-5xl font-bold md:text-6xl">Books</h1>
+          <p className="mt-5 text-lg leading-relaxed text-neutral-600">
+            The complete bibliography of Odipo C. Odero — from published memoirs to experimental anthologies.
+          </p>
+        </div>
+        <Link to="/recover" className="btn-light shrink-0">Already bought? Access your books</Link>
+      </header>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>
+        <div className="alert-error mb-10 flex flex-wrap items-center justify-between gap-4">
+          <span>{error}</span>
+          <button type="button" onClick={load} className="font-semibold underline underline-offset-4">Try again</button>
+        </div>
       )}
 
-      {isLoading && (
-        <div className="text-gray-400 italic mb-10">Loading books...</div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
-        {books.map(book => (
-          <div key={book.id} className="group cursor-pointer">
-            <Link to={`/books/${book.slug}`}>
-              <div className="relative overflow-hidden mb-6 bg-gray-100 aspect-[2/3]">
-                <img 
-                  src={book.coverImage} 
-                  alt={book.title} 
-                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                />
-                <div className="absolute top-4 right-4 bg-white px-3 py-1 text-[10px] uppercase font-bold tracking-widest border border-black">
-                  {book.status}
-                </div>
+      <div className="grid grid-cols-2 gap-x-5 gap-y-14 sm:gap-x-8 lg:grid-cols-3 lg:gap-x-12">
+        {books === null
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i}>
+                <div className="skeleton aspect-[2/3] w-full" />
+                <div className="skeleton mt-5 h-6 w-3/4" />
+                <div className="skeleton mt-3 h-4 w-1/3" />
               </div>
-              <h3 className="text-2xl font-serif font-bold mb-2 group-hover:underline underline-offset-4">{book.title}</h3>
-              <p className="text-sm text-gray-500 line-clamp-2 italic mb-4">{book.synopsis}</p>
-              <div className="flex items-center justify-between">
-                <p className="font-bold text-lg">KES {book.price.toLocaleString()}</p>
-              </div>
-            </Link>
-          </div>
-        ))}
+            ))
+          : visible.map((book, i) => {
+              const soon = book.status === BookStatus.COMING_SOON;
+              return (
+                <Reveal key={book.id} delay={(i % 3) * 70}>
+                  <Link to={`/books/${book.slug}`} className="group block">
+                    <div className="relative">
+                      <BookCover
+                        src={book.coverImage}
+                        title={book.title}
+                        priority={i < 3}
+                        imgClassName="transition-transform duration-700 ease-smooth group-hover:scale-[1.03]"
+                      />
+                      {book.status && book.status !== BookStatus.AVAILABLE && (
+                        <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                          {book.status}
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="mt-5 font-serif text-xl font-bold leading-snug group-hover:underline group-hover:underline-offset-4 md:text-2xl">
+                      {book.title}
+                    </h2>
+                    <p className="mt-2 text-sm italic leading-relaxed text-neutral-500 line-clamp-3 max-sm:hidden">{book.synopsis}</p>
+                    <p className="mt-3 text-sm font-semibold">{soon ? 'Coming soon' : formatKes(book.price)}</p>
+                  </Link>
+                </Reveal>
+              );
+            })}
       </div>
+
+      {books !== null && visible.length === 0 && !error && (
+        <p className="py-20 text-center font-serif text-2xl italic text-neutral-500">New books are on the way.</p>
+      )}
     </div>
   );
 };

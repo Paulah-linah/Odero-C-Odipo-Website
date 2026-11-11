@@ -1,98 +1,152 @@
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+const brandText = 'Odipo C. Odero';
+
+const navLinks = [
+  { name: 'Books', path: '/books' },
+  { name: 'Blog', path: '/blog' },
+  { name: 'About', path: '/about' },
+  { name: 'Events', path: '/events' },
+  { name: 'Contact', path: '/contact' },
+];
+
+/** Wait (briefly) for the script font so the name never swaps fonts mid-animation. */
+const useScriptFontReady = () => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        setReady(true);
+      }
+    };
+    const fonts = (document as any).fonts;
+    if (fonts?.load) {
+      fonts.load('400 1em "Great Vibes"').then(finish, finish);
+    } else {
+      finish();
+    }
+    const t = window.setTimeout(finish, 900);
+    return () => window.clearTimeout(t);
+  }, []);
+  return ready;
+};
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const fontReady = useScriptFontReady();
 
-  const brandText = 'Odipo C. Odero';
+  // Close the mobile menu on navigation
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
-  const navLinks = [
-    { name: 'Books', path: '/books' },
-    { name: 'Access Your Books', path: '/recover' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'About', path: '/about' },
-    { name: 'Events', path: '/events' },
-    { name: 'Contact', path: '/contact' },
-  ];
+  // Lock page scroll + allow Escape while the mobile menu is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setIsOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `relative py-1 transition-colors duration-200 hover:text-ink after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-full after:bg-ink after:origin-left after:transition-transform after:duration-300 ${
+      isActive ? 'text-ink after:scale-x-100' : 'text-neutral-500 after:scale-x-0 hover:after:scale-x-100'
+    }`;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-black py-4 px-6 md:px-12">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link
-          to="/"
-          aria-label={brandText}
-          className="text-3xl font-great-vibes leading-tight"
-        >
-          <span className="sr-only">{brandText}</span>
-          <span aria-hidden="true" className="odipo-brand-typing">
+    <header
+      className={`sticky top-0 z-50 bg-white/90 backdrop-blur-md transition-[border-color,box-shadow] duration-300 border-b ${
+        scrolled ? 'border-neutral-200 shadow-[0_8px_24px_-20px_rgba(0,0,0,.6)]' : 'border-transparent'
+      }`}
+    >
+      <nav className="page flex h-[72px] md:h-20 items-center justify-between" aria-label="Main">
+        <Link to="/" aria-label={`${brandText}, home`} className="font-script text-[2rem] md:text-[2.2rem] leading-none text-ink">
+          <span aria-hidden="true" className={`brand-write ${fontReady ? '' : '[animation-play-state:paused]'}`}>
             {brandText}
           </span>
         </Link>
-        
-        {/* Desktop Nav */}
-        <div className="hidden md:flex space-x-8 items-center uppercase text-xs tracking-widest font-semibold">
+
+        {/* Desktop */}
+        <div className="hidden md:flex items-center gap-9 text-[11px] font-semibold uppercase tracking-[0.2em]">
           {navLinks.map((link) => (
-            <Link 
-              key={link.path} 
-              to={link.path}
-              className={`hover:text-gray-500 transition-colors ${location.pathname === link.path ? 'border-b-2 border-black pb-1' : ''}`}
-            >
+            <NavLink key={link.path} to={link.path} className={linkClass}>
               {link.name}
-            </Link>
+            </NavLink>
           ))}
-          <Link to="/admin" className="ml-4 border border-black px-4 py-2 hover:bg-black hover:text-white transition-all text-[10px] tracking-[0.2em] font-bold">
-            ADMIN
+          <Link to="/recover" className="btn-dark !px-5 !py-2.5 !text-[10px]">
+            My Books
           </Link>
         </div>
 
-        {/* Mobile Toggle */}
-        <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-2xl">
-          {isOpen ? '✕' : '☰'}
+        {/* Mobile toggle */}
+        <button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          aria-expanded={isOpen}
+          aria-controls="mobile-menu"
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          className="md:hidden relative -mr-2 h-11 w-11 grid place-items-center"
+        >
+          <span className="sr-only">Menu</span>
+          <span aria-hidden="true" className="relative block h-3 w-6">
+            <span className={`absolute left-0 top-0 h-px w-6 bg-ink transition-transform duration-300 ease-smooth ${isOpen ? 'translate-y-1.5 rotate-45' : ''}`} />
+            <span className={`absolute left-0 bottom-0 h-px w-6 bg-ink transition-transform duration-300 ease-smooth ${isOpen ? '-translate-y-1.5 -rotate-45' : ''}`} />
+          </span>
         </button>
-      </div>
+      </nav>
 
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-40 flex flex-col items-center justify-center space-y-8">
-          <button onClick={() => setIsOpen(false)} className="absolute top-6 right-6 text-3xl">✕</button>
-          <Link
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className="mb-4 tracking-widest text-2xl font-great-vibes"
-          >
-            {brandText}
-          </Link>
-          {navLinks.map((link) => (
-            <Link key={link.path} to={link.path} onClick={() => setIsOpen(false)}>{link.name}</Link>
-          ))}
-          <Link to="/admin" onClick={() => setIsOpen(false)} className="border border-black px-8 py-3 text-sm uppercase tracking-widest font-bold">Admin</Link>
+      {/* Mobile menu */}
+      <div
+        id="mobile-menu"
+        className={`md:hidden fixed inset-x-0 top-[72px] bottom-0 bg-white transition-[opacity,visibility] duration-300 ${
+          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
+        }`}
+      >
+        <div className="page flex h-full flex-col justify-between py-10">
+          <ul className="space-y-1">
+            {[{ name: 'Home', path: '/' }, ...navLinks].map((link, i) => (
+              <li
+                key={link.path}
+                className={`transition-all duration-500 ease-smooth ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+                style={{ transitionDelay: isOpen ? `${60 + i * 40}ms` : '0ms' }}
+              >
+                <NavLink
+                  to={link.path}
+                  end={link.path === '/'}
+                  className={({ isActive }) =>
+                    `block py-3 font-serif text-4xl ${isActive ? 'italic text-ink' : 'text-neutral-400 hover:text-ink'}`
+                  }
+                >
+                  {link.name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-3">
+            <Link to="/recover" className="btn-dark w-full">Access my books</Link>
+            <Link to="/admin" className="block text-center text-[10px] uppercase tracking-[0.25em] text-neutral-400 py-2">
+              Admin
+            </Link>
+          </div>
         </div>
-      )}
-      <style>{`
-        .odipo-brand-typing {
-          display: inline-block;
-          white-space: nowrap;
-          overflow: hidden;
-          clip-path: inset(0 100% 0 0);
-          will-change: clip-path;
-          animation: odipo-brand-typing-reveal 1.8s steps(14, end) 140ms both;
-        }
-
-        @keyframes odipo-brand-typing-reveal {
-          to {
-            clip-path: inset(0 0 0 0);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .odipo-brand-typing {
-            animation: none;
-            clip-path: inset(0 0 0 0);
-          }
-        }
-      `}</style>
-    </nav>
+      </div>
+    </header>
   );
 };

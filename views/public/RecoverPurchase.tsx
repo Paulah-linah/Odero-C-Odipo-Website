@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { digitalAccessApi } from '../../services/digitalAccess';
 
 export const RecoverPurchase: React.FC = () => {
@@ -47,44 +47,56 @@ export const RecoverPurchase: React.FC = () => {
   };
 
   return (
-    <div className="py-24 px-6 md:px-12 max-w-2xl mx-auto">
-      <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Access Your Book</h1>
-      <p className="text-gray-600 mb-10">
-        Enter the payment reference and the email you used during checkout.
-      </p>
+    <div className="page grid max-w-5xl grid-cols-1 gap-14 pb-28 pt-14 md:grid-cols-2 md:pt-20">
+      <div>
+        <p className="eyebrow mb-5">Your library</p>
+        <h1 className="font-serif text-5xl font-bold leading-[1.05]">
+          Access your <span className="italic font-normal">books.</span>
+        </h1>
+        <p className="mt-6 text-lg leading-relaxed text-neutral-600">
+          Enter the payment reference and the email address you used at checkout to open your book in the reader.
+        </p>
+        <ul className="mt-10 space-y-4 text-sm text-neutral-600">
+          <li className="flex gap-3"><span className="font-serif italic text-neutral-400">01</span>Your reference was shown after payment and starts with <code className="bg-mist px-1.5 py-0.5 text-ink">book_</code>.</li>
+          <li className="flex gap-3"><span className="font-serif italic text-neutral-400">02</span>Use the same email address you entered when you paid.</li>
+          <li className="flex gap-3"><span className="font-serif italic text-neutral-400">03</span>Can&rsquo;t find your reference? <Link to="/contact" className="underline underline-offset-4 hover:text-ink">Contact us</Link> and we&rsquo;ll help.</li>
+        </ul>
+      </div>
 
-      <form onSubmit={handleRecover} className="bg-white border border-black p-8">
-        {error && <div className="bg-red-50 text-red-600 p-3 text-xs mb-6 font-bold">{error}</div>}
+      <form onSubmit={handleRecover} className="border border-ink p-7 sm:p-10">
+        {error && <div className="alert-error mb-6" role="alert">{error}</div>}
 
         <div className="space-y-6">
           <div>
-            <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Payment Reference</label>
+            <label htmlFor="ref" className="field-label">Payment reference</label>
             <input
+              id="ref"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              className="w-full border border-black p-3 focus:outline-none"
-              placeholder="e.g. book_<id>_123456789"
+              className="field font-mono"
+              placeholder="book_…"
+              autoComplete="off"
+              spellCheck={false}
               required
             />
           </div>
 
           <div>
-            <label className="block text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-2">Email Address</label>
+            <label htmlFor="ref-email" className="field-label">Email address</label>
             <input
+              id="ref-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-black p-3 focus:outline-none"
+              className="field"
               placeholder="you@example.com"
+              autoComplete="email"
               required
             />
           </div>
 
-          <button
-            disabled={isSubmitting}
-            className="w-full bg-black text-white py-4 uppercase text-xs font-bold tracking-widest hover:bg-gray-800 disabled:opacity-60"
-          >
-            {isSubmitting ? 'Checking...' : 'Continue to Reader'}
+          <button type="submit" disabled={isSubmitting} className="btn-dark w-full">
+            {isSubmitting ? 'Checking…' : 'Continue to reader'}
           </button>
         </div>
       </form>

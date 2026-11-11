@@ -32,15 +32,66 @@ const toBook = (row: BookRow): Book => ({
   isFeatured: row.is_featured
 });
 
+// Short-lived in-memory cache so moving between pages (Home → Books → a book) doesn't refetch the catalogue.
+const LIST_TTL_MS = 60_000;
+let listCache: { at: number; promise: Promise<Book[]> } | null = null;
+
+export const invalidateBooksCache = () => {
+  listCache = null;
+};
+
+// Downscale large cover images in the browser before upload, so visitors never download multi-megabyte covers.
+const MAX_COVER_WIDTH = 1000;
+const compressCover = async (file: File): Promise<File> => {
+  if (file.size < 350 * 1024 || typeof createImageBitmap !== 'function') return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_COVER_WIDTH / bitmap.width);
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close?.();
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+    if (!blob || blob.size >= file.size) return file;
+    const base = file.name.replace(/\.[^.]+$/, '') || 'cover';
+    return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+};
+
 export const booksApi = {
   list: async (): Promise<Book[]> => {
-    const { data, error } = await supabase
-      .from('books')
-      .select('*')
-      .order('created_at', { ascending: true });
+    if (listCache && Date.now() - listCache.at < LIST_TTL_MS) return listCache.promise;
 
-    if (error) throw error;
-    return (data as BookRow[]).map(toBook);
+    const promise = (async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data as BookRow[]).map(toBook);
+    })();
+
+    listCache = { at: Date.now(), promise };
+    promise.catch(() => {
+      listCache = null;
+    });
+    return promise;
+  },
+
+  /** Returns a book from the cached catalogue instantly, if it has already been loaded. */
+  peekBySlug: (slug: string): Promise<Book | null> | null => {
+    if (!listCache || Date.now() - listCache.at >= LIST_TTL_MS) return null;
+    return listCache.promise.then((books) => books.find((b) => b.slug === slug) ?? null).catch(() => null);
   },
 
   getBySlug: async (slug: string): Promise<Book | null> => {
@@ -68,6 +119,7 @@ export const booksApi = {
   },
 
   update: async (id: string, patch: Partial<BookRow>): Promise<Book> => {
+    invalidateBooksCache();
     const { data, error } = await supabase
       .from('books')
       .update(patch)
@@ -80,15 +132,18 @@ export const booksApi = {
   },
 
   remove: async (id: string): Promise<void> => {
+    invalidateBooksCache();
     const { error } = await supabase.from('books').delete().eq('id', id);
     if (error) throw error;
   },
 
-  uploadCover: async (bookId: string, file: File): Promise<{ cover_path: string; cover_url: string } > => {
+  uploadCover: async (bookId: string, originalFile: File): Promise<{ cover_path: string; cover_url: string } > => {
+    invalidateBooksCache();
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.type)) {
+    if (!allowed.includes(originalFile.type)) {
       throw new Error('Unsupported file type. Please upload a JPG, PNG, or WebP image.');
     }
+    const file = await compressCover(originalFile);
 
     const maxBytes = 5 * 1024 * 1024;
     if (file.size > maxBytes) {
