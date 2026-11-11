@@ -50,15 +50,16 @@ export const Home: React.FC = () => {
         </div>
 
         <div className="flex justify-center lg:col-span-6 lg:justify-end">
-          <div className="group relative w-full max-w-[18rem] sm:max-w-[22rem] lg:max-w-[26rem]">
-            <div className="absolute -right-4 -top-4 h-full w-full border border-ink/80 transition-transform duration-500 ease-smooth group-hover:-translate-x-2 group-hover:translate-y-2" aria-hidden="true" />
+          <div className="group relative m-4 w-full max-w-[18rem] sm:max-w-[22rem] lg:max-w-[26rem]">
+            {/* Even frame around the image, as in the original design */}
+            <div className="absolute -inset-4 border border-ink opacity-20 transition-opacity duration-500 group-hover:opacity-100" aria-hidden="true" />
             <img
               src="/images/my-hero.webp"
               width={900}
               height={900}
               alt="A hand-drawn smiling face, the signature image of Odipo C. Odero's work"
               {...({ fetchpriority: 'high' } as any)}
-              className="relative w-full bg-mist object-cover grayscale shadow-[0_30px_60px_-30px_rgba(0,0,0,.45)]"
+              className="relative block w-full bg-white object-cover grayscale shadow-2xl transition-transform duration-500 ease-smooth group-hover:scale-[1.02]"
             />
           </div>
         </div>
