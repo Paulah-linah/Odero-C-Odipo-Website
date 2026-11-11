@@ -71,10 +71,11 @@ export const Navbar: React.FC = () => {
     }`;
 
   return (
+    <>
     <header
-      className={`sticky top-0 z-50 bg-white/90 backdrop-blur-md transition-[border-color,box-shadow] duration-300 border-b ${
-        scrolled ? 'border-neutral-200 shadow-[0_8px_24px_-20px_rgba(0,0,0,.6)]' : 'border-transparent'
-      }`}
+      className={`sticky top-0 z-50 transition-[border-color,box-shadow,background-color] duration-300 border-b ${
+        isOpen ? 'bg-white' : 'bg-white/90 backdrop-blur-md'
+      } ${scrolled || isOpen ? 'border-neutral-200 shadow-[0_8px_24px_-20px_rgba(0,0,0,.6)]' : 'border-transparent'}`}
     >
       <nav className="page flex h-[72px] md:h-20 items-center justify-between" aria-label="Main">
         <Link to="/" aria-label={`${brandText}, home`} className="font-script text-[2rem] md:text-[2.2rem] leading-none text-ink">
@@ -111,11 +112,14 @@ export const Navbar: React.FC = () => {
           </span>
         </button>
       </nav>
+    </header>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — rendered outside the header: the header's backdrop blur would otherwise
+          confine this fixed panel to the header's own height, leaving the page showing through. */}
       <div
         id="mobile-menu"
-        className={`md:hidden fixed inset-x-0 top-[72px] bottom-0 bg-white transition-[opacity,visibility] duration-300 ${
+        aria-hidden={!isOpen}
+        className={`md:hidden fixed inset-x-0 top-[72px] bottom-0 z-40 overflow-y-auto bg-white transition-[opacity,visibility] duration-300 ${
           isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
       >
@@ -131,7 +135,7 @@ export const Navbar: React.FC = () => {
                   to={link.path}
                   end={link.path === '/'}
                   className={({ isActive }) =>
-                    `block py-3 font-serif text-4xl ${isActive ? 'italic text-ink' : 'text-neutral-400 hover:text-ink'}`
+                    `block border-b border-neutral-100 py-4 font-serif text-[2rem] leading-tight ${isActive ? 'italic text-ink' : 'text-neutral-700 hover:text-ink'}`
                   }
                 >
                   {link.name}
@@ -141,12 +145,12 @@ export const Navbar: React.FC = () => {
           </ul>
           <div className="space-y-3">
             <Link to="/recover" className="btn-dark w-full">Access my books</Link>
-            <Link to="/admin" className="block text-center text-[10px] uppercase tracking-[0.25em] text-neutral-400 py-2">
+            <Link to="/admin" className="block text-center text-[10px] uppercase tracking-[0.25em] text-neutral-500 py-2">
               Admin
             </Link>
           </div>
         </div>
       </div>
-    </header>
+    </>
   );
 };

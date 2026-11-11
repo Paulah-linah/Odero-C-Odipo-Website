@@ -4,6 +4,7 @@ import { Book, BookStatus } from '../../types';
 import { booksApi } from '../../services/books';
 import { BookCover } from '../../components/BookCover';
 import { Reveal } from '../../components/Reveal';
+import { AuthorPortrait } from '../../components/AuthorPortrait';
 
 const formatKes = (amount: number) => `KES ${amount.toLocaleString()}`;
 
@@ -36,7 +37,6 @@ export const Home: React.FC = () => {
       {/* Hero */}
       <section className="page grid grid-cols-1 items-center gap-14 pb-20 pt-12 md:pt-20 lg:grid-cols-12 lg:gap-10 lg:pb-28">
         <div className="lg:col-span-6">
-          <p className="eyebrow mb-7">Author &middot; Nairobi</p>
           <h1 className="text-balance font-serif text-[3.25rem] font-bold leading-[1.02] tracking-tight sm:text-7xl lg:text-[5.5rem]">
             Uncoloured <span className="italic font-normal">Stories.</span>
           </h1>
@@ -165,16 +165,8 @@ export const Home: React.FC = () => {
       {/* About the author */}
       <section className="border-t border-neutral-200 py-24 md:py-28">
         <div className="page grid items-center gap-12 md:grid-cols-12">
-          <Reveal className="md:col-span-5">
-            <img
-              src="/images/author-photo.webp"
-              width={720}
-              height={772}
-              loading="lazy"
-              decoding="async"
-              alt="Portrait of Odipo C. Odero"
-              className="mx-auto w-full max-w-sm bg-mist object-cover grayscale"
-            />
+          <Reveal className="py-8 md:col-span-5">
+            <AuthorPortrait />
           </Reveal>
           <Reveal className="md:col-span-6 md:col-start-7" delay={80}>
             <p className="eyebrow mb-5">The author</p>

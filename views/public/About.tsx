@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Reveal } from '../../components/Reveal';
+import { AuthorPortrait } from '../../components/AuthorPortrait';
 
 const facts = [
   { label: 'Literary focus', value: 'Contemporary fiction, social commentary, literary essays' },
@@ -28,14 +29,7 @@ export const About: React.FC = () => (
         </p>
       </div>
       <div className="lg:col-span-5 lg:col-start-8">
-        <img
-          src="/images/author-photo.webp"
-          width={720}
-          height={772}
-          alt="Portrait of Odipo C. Odero"
-          {...({ fetchpriority: 'high' } as any)}
-          className="mx-auto w-full max-w-md bg-mist object-cover grayscale shadow-[0_30px_60px_-30px_rgba(0,0,0,.45)]"
-        />
+        <AuthorPortrait priority className="my-8" />
       </div>
     </section>
 
