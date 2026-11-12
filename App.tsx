@@ -4,11 +4,13 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { supabase } from './services/supabaseClient';
 import { invalidateBooksCache } from './services/books';
+import { importWithRecovery } from './services/staleBuild';
 
 // Each page is loaded only when it is visited, so the first visit downloads far less JavaScript.
 // The admin area and the PDF reader (pdf.js) never load for regular visitors.
+// If a page file from an older deploy is missing, importWithRecovery reloads once to get the new version.
 const named = <T extends Record<string, any>>(loader: () => Promise<T>, name: keyof T) =>
-  lazy(() => loader().then((m) => ({ default: m[name] as React.ComponentType<any> })));
+  lazy(() => importWithRecovery(loader).then((m) => ({ default: m[name] as React.ComponentType<any> })));
 
 const Home = named(() => import('./views/public/Home'), 'Home');
 const Books = named(() => import('./views/public/Books'), 'Books');

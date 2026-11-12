@@ -1,4 +1,5 @@
 import React from 'react';
+import { isStaleBuildError, reloadForNewVersion } from '../services/staleBuild';
 
 type Props = {
   children: React.ReactNode;
@@ -16,27 +17,42 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    // Intentionally minimal: we only want to prevent a white screen.
     console.error(error);
+    // An outdated page asked for a file from a previous deploy: quietly reload to the new version.
+    if (isStaleBuildError(error)) reloadForNewVersion();
   }
 
   render() {
-    if (this.state.error) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-white p-6">
-          <div className="max-w-lg w-full border border-black p-8">
-            <h1 className="text-2xl font-serif font-bold mb-4">Something went wrong</h1>
-            <p className="text-sm text-gray-600 mb-6">
-              The app crashed while loading. Check the browser console for details.
-            </p>
-            <pre className="text-[11px] whitespace-pre-wrap break-words bg-gray-50 border border-gray-200 p-4">
-              {this.state.error.message}
-            </pre>
-          </div>
-        </div>
-      );
-    }
+    const { error } = this.state;
+    if (!error) return this.props.children;
 
-    return this.props.children;
+    const stale = isStaleBuildError(error);
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white p-6">
+        <div className="w-full max-w-md text-center">
+          <p className="font-script text-4xl">Odipo C. Odero</p>
+          <h1 className="mt-8 font-serif text-3xl font-bold">
+            {stale ? 'A new version of the site is ready' : 'Something went wrong'}
+          </h1>
+          <p className="mt-4 text-neutral-600">
+            {stale
+              ? 'The site was updated while you had it open. Reload to continue.'
+              : 'Sorry — this page didn’t load properly. Please reload, or return to the homepage.'}
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <button type="button" onClick={() => window.location.reload()} className="btn-dark">
+              Reload page
+            </button>
+            <a href="/" className="btn-light">Go to homepage</a>
+          </div>
+          {!stale && (
+            <details className="mt-10 text-left text-xs text-neutral-500">
+              <summary className="cursor-pointer select-none">Technical details</summary>
+              <pre className="mt-3 whitespace-pre-wrap break-words border border-neutral-200 bg-mist p-4">{error.message}</pre>
+            </details>
+          )}
+        </div>
+      </div>
+    );
   }
 }
