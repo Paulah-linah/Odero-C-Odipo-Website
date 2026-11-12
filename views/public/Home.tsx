@@ -165,7 +165,7 @@ export const Home: React.FC = () => {
       {/* About the author */}
       <section className="border-t border-neutral-200 py-24 md:py-28">
         <div className="page grid items-center gap-12 md:grid-cols-12">
-          <Reveal className="py-8 md:col-span-5">
+          <Reveal className="md:col-span-5">
             <AuthorPortrait />
           </Reveal>
           <Reveal className="md:col-span-6 md:col-start-7" delay={80}>

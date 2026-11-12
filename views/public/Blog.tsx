@@ -207,7 +207,7 @@ export const Blog: React.FC = () => {
 
       {/* Newsletter */}
       <section className="border-t border-neutral-200 bg-mist py-20">
-        <div className="page grid items-center gap-10 md:grid-cols-2">
+        <div className="page grid grid-cols-1 items-center gap-10 md:grid-cols-2 [&>*]:min-w-0">
           <div>
             <h2 className="font-serif text-3xl font-bold italic md:text-4xl">Stay connected</h2>
             <p className="mt-4 max-w-md text-neutral-600">New posts, writing insights and literary reflections — delivered to your inbox.</p>

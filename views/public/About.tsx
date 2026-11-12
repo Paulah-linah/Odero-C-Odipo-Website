@@ -29,7 +29,7 @@ export const About: React.FC = () => (
         </p>
       </div>
       <div className="lg:col-span-5 lg:col-start-8">
-        <AuthorPortrait priority className="my-8" />
+        <AuthorPortrait priority />
       </div>
     </section>
 

@@ -5,6 +5,9 @@
 @layer base {
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body { @apply bg-paper text-ink font-sans antialiased; text-rendering: optimizeLegibility; }
+  /* Safety net: nothing may widen the page sideways on phones. `clip` (unlike `hidden`)
+     keeps the sticky header working. */
+  html, body { overflow-x: clip; }
   h1, h2, h3, h4 { @apply font-serif; }
   ::selection { background: #0a0a0a; color: #fff; }
   :focus-visible { outline: 2px solid #0a0a0a; outline-offset: 3px; }
